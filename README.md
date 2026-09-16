@@ -1,6 +1,6 @@
 # Real Love Ready AI Companion v0.1
 
-This repository is a small local proof-of-concept for an AI companion grounded in approved Real Love Ready material. It is intentionally a command-line prototype: no frontend, auth, billing, voice, memory, agents, fine-tuning, browser access, database, or production deployment.
+This repository is a small proof-of-concept for an AI companion grounded in approved Real Love Ready material. It includes a local browser UI and is being prepared for a small, access-controlled feedback preview. It does not yet include authentication, billing, voice, persistent user memory, agents, fine-tuning, browser access, database storage, or a public production deployment.
 
 The core product question for v0.1 is simple: can a companion grounded in the Real Love Ready body of work produce conversations useful enough that readers and the RLR team want to keep using it?
 
@@ -172,6 +172,16 @@ http://localhost:3000
 ```
 
 The web UI runs locally and uses the same retrieval, system prompt, safety checks, and answer generation path as the CLI. Conversation history is kept in memory by the local server and can be reset from the page.
+
+For a hosting-ready command, use:
+
+```bash
+npm start
+```
+
+Cloud hosts usually set `PORT` automatically. Use `RLR_WEB_HOST=0.0.0.0` in the host's environment settings and configure its health check to call `/healthz`.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) before sharing the app outside your own machine.
 
 ## Inspect Retrieval
 

@@ -16,8 +16,8 @@ const config = getConfig();
 const client = createOpenAIClient(config.apiKey);
 const histories = new Map<string, ChatMessage[]>();
 const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "public");
-const port = Number(process.env.RLR_WEB_PORT ?? 3000);
-const host = "127.0.0.1";
+const port = parsePort(process.env.PORT ?? process.env.RLR_WEB_PORT);
+const host = process.env.RLR_WEB_HOST ?? "127.0.0.1";
 
 const server = http.createServer(async (request, response) => {
   try {
@@ -27,6 +27,11 @@ const server = http.createServer(async (request, response) => {
     }
 
     const url = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
+
+    if (request.method === "GET" && url.pathname === "/healthz") {
+      sendJson(response, 200, { status: "ok" });
+      return;
+    }
 
     if (request.method === "GET" && url.pathname === "/api/status") {
       sendJson(response, 200, {
@@ -135,6 +140,11 @@ function contentType(filePath: string): string {
     return "text/javascript; charset=utf-8";
   }
   return "text/html; charset=utf-8";
+}
+
+function parsePort(value: string | undefined): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 65535 ? parsed : 3000;
 }
 
 async function readJson<T>(request: http.IncomingMessage): Promise<T> {

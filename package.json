@@ -7,6 +7,8 @@
   "scripts": {
     "chat": "tsx src/cli.ts",
     "web": "tsx src/web/server.ts",
+    "start": "npm run web",
+    "build": "npm run typecheck",
     "ingest": "tsx src/ingestion/ingest.ts",
     "retrieval": "tsx scripts/inspectRetrieval.ts",
     "eval": "tsx evals/runEvals.ts",

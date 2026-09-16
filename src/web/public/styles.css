@@ -94,6 +94,7 @@ p { margin: 0; }
 .quiet-button, .suggestion, .copy-button, .retry-button { border: 0; background: transparent; color: inherit; }
 .quiet-button { padding: 8px 0; border-bottom: 1px solid var(--rose-dark); color: var(--rose-dark); font-size: 14px; }
 .quiet-button:hover { color: var(--ink); border-color: var(--ink); }
+.logout-form { margin: 0; }
 
 .boundary-note {
   display: grid;

@@ -22,6 +22,9 @@
             <span class="status-dot" aria-hidden="true"></span>
             <span id="connectionText">Connecting</span>
           </div>
+          <form id="logoutForm" class="logout-form" method="post" action="/auth/logout" hidden>
+            <button class="quiet-button" type="submit">Sign out</button>
+          </form>
           <button id="resetButton" class="quiet-button" type="button">New conversation</button>
         </div>
       </header>

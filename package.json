@@ -1,0 +1,32 @@
+{
+  "name": "rlr-ai-companion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local command-line RAG prototype for the Real Love Ready AI companion.",
+  "scripts": {
+    "chat": "tsx src/cli.ts",
+    "ingest": "tsx src/ingestion/ingest.ts",
+    "retrieval": "tsx scripts/inspectRetrieval.ts",
+    "eval": "tsx evals/runEvals.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "openai": "^6.0.0",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -106,7 +106,8 @@ export async function sendMagicLink(config: PreviewAuthConfig, email: string): P
       from: config.resendFrom,
       to: [email],
       subject: "Your Real Love Ready Companion sign-in link",
-      html: magicLinkEmail(magicLink)
+      html: magicLinkEmail(magicLink),
+      text: magicLinkText(magicLink)
     })
   });
 
@@ -151,7 +152,11 @@ export function verifySignedToken(token: string, secret: string): AuthTokenPaylo
 
 function magicLinkEmail(magicLink: string): string {
   const safeLink = escapeHtml(magicLink);
-  return `<p>Here is your sign-in link for the Real Love Ready Companion preview.</p><p><a href="${safeLink}">Open the companion</a></p><p>This link expires in 15 minutes. If you did not request it, you can ignore this email.</p>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;background:#fcf8f2;color:#302824;font-family:Arial,sans-serif"><span style="display:none;max-height:0;overflow:hidden;opacity:0">Your secure Real Love Ready Companion sign-in link expires in 15 minutes.</span><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="padding:32px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;margin:0 auto;background:#fffdfa;border:1px solid #e7dbcf"><tr><td style="padding:32px"><p style="margin:0 0 12px;color:#934f48;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Real Love Ready</p><h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:28px;font-weight:600;line-height:1.2">Sign in to the Companion preview</h1><p style="margin:0 0 24px;font-size:16px;line-height:1.55">Use the secure link below to continue. It expires in 15 minutes.</p><p style="margin:0 0 24px"><a href="${safeLink}" style="display:inline-block;box-sizing:border-box;padding:14px 18px;background:#934f48;color:#ffffff;font-size:16px;font-weight:700;line-height:1.2;text-decoration:none">Open Real Love Ready Companion</a></p><p style="margin:0;color:#756961;font-size:14px;line-height:1.55">If you did not request this sign-in link, you can safely ignore this email.</p></td></tr></table></td></tr></table></body></html>`;
+}
+
+function magicLinkText(magicLink: string): string {
+  return `Sign in to the Real Love Ready Companion preview.\n\nOpen the companion: ${magicLink}\n\nThis secure link expires in 15 minutes. If you did not request it, you can safely ignore this email.`;
 }
 
 function normalizePublicBaseUrl(value: string | undefined): string | undefined {

@@ -52,6 +52,18 @@ RLR_WEB_HOST=0.0.0.0
 
 The host normally supplies `PORT` itself. The app uses it automatically, falling back to `RLR_WEB_PORT` or `3000` for local development.
 
+## Railway Preview
+
+The repository includes `railway.toml`, so Railway will build with `npm run build`, start with `npm start`, and verify the release at `/healthz`. When the Railway project is connected, generate its Railway-provided domain and use that exact HTTPS URL for `RLR_PUBLIC_BASE_URL`.
+
+The temporary URL will follow this pattern:
+
+```text
+https://<service-name>.up.railway.app
+```
+
+Set every value from this document in Railway Variables. Do not upload `.env`, the `.rlr` folder, or the private corpus repository.
+
 ## Invite-Only Email Access
 
 The app now supports passwordless magic-link access for named reviewers. A reviewer enters their email address, receives a 15-minute sign-in link, and receives a signed, HTTP-only browser session after following it. The app responds generically to link requests, so it does not reveal whether an address is on the allowlist.

@@ -3,41 +3,65 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#fcf8f2">
     <title>Real Love Ready Companion</title>
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main class="shell">
+    <main class="app-shell">
       <header class="topbar">
-        <div>
-          <h1>Real Love Ready Companion</h1>
-          <p>Educational reflection grounded in approved RLR source material.</p>
+        <a class="brand" href="/" aria-label="Real Love Ready Companion home">
+          <span class="brand-mark" aria-hidden="true">RLR</span>
+          <span>
+            <strong>Real Love Ready</strong>
+            <span>Companion</span>
+          </span>
+        </a>
+        <div class="topbar-actions">
+          <div id="connectionStatus" class="connection-status" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="connectionText">Connecting</span>
+          </div>
+          <button id="resetButton" class="quiet-button" type="button">New conversation</button>
         </div>
-        <button id="resetButton" type="button">Reset</button>
       </header>
 
-      <section class="notice" aria-label="Companion boundaries">
-        <strong>Not therapy or crisis care.</strong>
-        This prototype does not diagnose, make relationship decisions, or replace professional support.
+      <section class="boundary-note" aria-label="Companion boundaries">
+        <span class="boundary-label">A thoughtful place to reflect</span>
+        <p>This companion is for education and reflection, not therapy, crisis support, diagnosis, or relationship decisions.</p>
       </section>
 
-      <section id="messages" class="messages" aria-live="polite">
-        <article class="message assistant">
-          <div class="message-label">Companion</div>
-          <p>Ask a question about relationships, reflection, or Real Love Ready concepts. I’ll search the approved corpus and cite the sources I used.</p>
-        </article>
+      <section class="conversation" aria-label="Conversation">
+        <div id="messages" class="messages" aria-live="polite">
+          <article class="message assistant welcome-message">
+            <div class="message-heading">
+              <div class="message-label">Real Love Ready Companion</div>
+              <span class="message-context">Grounded in the RLR library</span>
+            </div>
+            <p>What is feeling present in your relationships? We can make room to explore it together, with ideas from Real Love Ready material as a guide.</p>
+            <div class="suggestions" aria-label="Suggested questions">
+              <button class="suggestion" type="button" data-question="Why do I feel guilty when I set boundaries?">Setting boundaries without guilt</button>
+              <button class="suggestion" type="button" data-question="How can I have a difficult conversation with more care?">Navigating a difficult conversation</button>
+              <button class="suggestion" type="button" data-question="What does secure connection look like in a relationship?">Understanding secure connection</button>
+            </div>
+          </article>
+        </div>
       </section>
 
       <form id="chatForm" class="composer">
-        <label for="questionInput">Question</label>
-        <textarea id="questionInput" name="question" rows="3" placeholder="Why do I feel guilty when I set boundaries?"></textarea>
-        <div class="composer-actions">
-          <div id="status" class="status">Ready</div>
-          <button id="sendButton" type="submit">Send</button>
+        <label class="sr-only" for="questionInput">Your question</label>
+        <textarea id="questionInput" name="question" rows="2" placeholder="Share a question or a situation you are reflecting on..."></textarea>
+        <div class="composer-footer">
+          <div id="status" class="composer-status">Ready to reflect</div>
+          <button id="sendButton" class="send-button" type="submit"><span>Send</span><span aria-hidden="true">&#8599;</span></button>
         </div>
       </form>
-    </main>
 
+      <footer class="app-footer">
+        <span>Private prototype</span>
+        <span id="modelDetail">Checking RLR library connection...</span>
+      </footer>
+    </main>
     <script src="/app.js" type="module"></script>
   </body>
 </html>

@@ -33,6 +33,7 @@ Approved book and podcast material are treated as equal source material for the 
 - Metadata validation for approved content.
 - Local vector store state in `.rlr/vector-store.json`.
 - Current-session-only chat history.
+- Local browser UI for the same chat pipeline.
 - Retrieval debugging command.
 - Manual evaluation harness with 28 seeded tests.
 - Basic application-level safety routing.
@@ -157,6 +158,20 @@ npm run chat
 ```
 
 The CLI keeps conversation context only in memory for the current process. It does not save normal user conversations to disk.
+
+## Web UI
+
+```bash
+npm run web
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+The web UI runs locally and uses the same retrieval, system prompt, safety checks, and answer generation path as the CLI. Conversation history is kept in memory by the local server and can be reset from the page.
 
 ## Inspect Retrieval
 

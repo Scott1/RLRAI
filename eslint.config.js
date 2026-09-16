@@ -20,5 +20,16 @@ export default [
       ],
       "no-console": "off"
     }
+  },
+  {
+    files: ["src/web/public/**/*.js"],
+    languageOptions: {
+      globals: {
+        crypto: "readonly",
+        document: "readonly",
+        fetch: "readonly",
+        localStorage: "readonly"
+      }
+    }
   }
 ];

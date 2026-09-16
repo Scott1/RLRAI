@@ -6,6 +6,7 @@
   "description": "Local command-line RAG prototype for the Real Love Ready AI companion.",
   "scripts": {
     "chat": "tsx src/cli.ts",
+    "web": "tsx src/web/server.ts",
     "ingest": "tsx src/ingestion/ingest.ts",
     "retrieval": "tsx scripts/inspectRetrieval.ts",
     "eval": "tsx evals/runEvals.ts",

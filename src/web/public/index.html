@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Real Love Ready Companion</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Real Love Ready Companion</h1>
+          <p>Educational reflection grounded in approved RLR source material.</p>
+        </div>
+        <button id="resetButton" type="button">Reset</button>
+      </header>
+
+      <section class="notice" aria-label="Companion boundaries">
+        <strong>Not therapy or crisis care.</strong>
+        This prototype does not diagnose, make relationship decisions, or replace professional support.
+      </section>
+
+      <section id="messages" class="messages" aria-live="polite">
+        <article class="message assistant">
+          <div class="message-label">Companion</div>
+          <p>Ask a question about relationships, reflection, or Real Love Ready concepts. I’ll search the approved corpus and cite the sources I used.</p>
+        </article>
+      </section>
+
+      <form id="chatForm" class="composer">
+        <label for="questionInput">Question</label>
+        <textarea id="questionInput" name="question" rows="3" placeholder="Why do I feel guilty when I set boundaries?"></textarea>
+        <div class="composer-actions">
+          <div id="status" class="status">Ready</div>
+          <button id="sendButton" type="submit">Send</button>
+        </div>
+      </form>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+.preview-accounts.txt
 .rlr/
 evals/results/
 npm-debug.log*

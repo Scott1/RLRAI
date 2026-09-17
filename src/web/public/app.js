@@ -160,9 +160,13 @@ function appendMessage(role, label, text, sources = [], details = {}) {
     heading.append(context);
   }
 
-  const body = document.createElement("p");
+  const body = document.createElement(role === "assistant" ? "div" : "p");
   body.className = "message-body";
-  body.textContent = text;
+  if (role === "assistant") {
+    appendFormattedAssistantText(body, text);
+  } else {
+    body.textContent = text;
+  }
   article.append(heading, body);
 
   if (role === "assistant") {
@@ -218,6 +222,71 @@ function appendMessage(role, label, text, sources = [], details = {}) {
 
   messages.append(article);
   article.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+
+function appendFormattedAssistantText(container, text) {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  let paragraphLines = [];
+  let list;
+
+  const flushParagraph = () => {
+    if (!paragraphLines.length) {
+      return;
+    }
+
+    const paragraph = document.createElement("p");
+    appendInlineFormatting(paragraph, paragraphLines.join(" "));
+    container.append(paragraph);
+    paragraphLines = [];
+  };
+
+  const flushList = () => {
+    if (list) {
+      container.append(list);
+      list = undefined;
+    }
+  };
+
+  for (const line of lines) {
+    const listItem = line.match(/^\s*[-*+]\s+(.+)$/);
+    if (listItem) {
+      flushParagraph();
+      list ??= document.createElement("ul");
+      const item = document.createElement("li");
+      appendInlineFormatting(item, listItem[1]);
+      list.append(item);
+      continue;
+    }
+
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    flushList();
+    paragraphLines.push(line.trim());
+  }
+
+  flushParagraph();
+  flushList();
+}
+
+function appendInlineFormatting(container, text) {
+  const boldPattern = /(\*\*|__)(.+?)\1/g;
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(boldPattern)) {
+    const matchStart = match.index ?? 0;
+    container.append(document.createTextNode(text.slice(lastIndex, matchStart)));
+
+    const strong = document.createElement("strong");
+    strong.textContent = match[2];
+    container.append(strong);
+    lastIndex = matchStart + match[0].length;
+  }
+
+  container.append(document.createTextNode(text.slice(lastIndex)));
 }
 
 function setBusy(isBusy, text) {

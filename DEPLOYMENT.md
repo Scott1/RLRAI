@@ -54,7 +54,7 @@ The host normally supplies `PORT` itself. The app uses it automatically, falling
 
 ## Railway Preview
 
-The repository includes `railway.toml`, so Railway will build with `npm run build`, start with `npm start`, and verify the release at `/healthz`. When the Railway project is connected, generate its Railway-provided domain and use that exact HTTPS URL for `RLR_PUBLIC_BASE_URL`.
+The repository includes `railway.toml`, so Railway will build with `npm run build`, start with `npm start`, and verify the release at `/healthz`. When the Railway project is connected, generate its Railway-provided HTTPS domain.
 
 The temporary URL will follow this pattern:
 
@@ -64,24 +64,22 @@ https://<service-name>.up.railway.app
 
 Set every value from this document in Railway Variables. Do not upload `.env`, the `.rlr` folder, or the private corpus repository.
 
-## Invite-Only Email Access
+## Manual Reviewer Accounts
 
-The app now supports passwordless magic-link access for named reviewers. A reviewer enters their email address, receives a 15-minute sign-in link, and receives a signed, HTTP-only browser session after following it. The app responds generically to link requests, so it does not reveal whether an address is on the allowlist.
+The app supports a small set of manually configured reviewer accounts. Each reviewer signs in with a username and password, then receives a signed, HTTP-only browser session. Removing an account or changing its password ends any existing session for that reviewer on its next request.
 
 Configure these additional host secrets:
 
 ```text
-RLR_AUTH_MODE=email
-RLR_ALLOWED_EMAILS=reviewer1@example.com;reviewer2@example.com
+RLR_AUTH_MODE=password
 RLR_AUTH_SECRET=<long random secret>
-RLR_PUBLIC_BASE_URL=https://your-preview-host.example
-RESEND_API_KEY=re_...
-RLR_EMAIL_FROM=Real Love Ready <companion@your-verified-domain.example>
+RLR_AUTH_SECURE_COOKIES=true
+RLR_PREVIEW_ACCOUNTS=reviewer-01|<long-password>;reviewer-02|<long-password>;reviewer-03|<long-password>;reviewer-04|<long-password>;reviewer-05|<long-password>
 ```
 
-The email sender uses Resend. Before sending reviewer links, create a Resend API key and verify the domain used in `RLR_EMAIL_FROM`. Add or remove a reviewer by editing `RLR_ALLOWED_EMAILS` in the host's secret settings and redeploying. Local development keeps `RLR_AUTH_MODE=off` by default.
+Use unique passwords of at least 12 characters. Treat `RLR_PREVIEW_ACCOUNTS` as a Railway secret, never as repository content. Add, remove, or rotate accounts by editing that variable and redeploying. Local development keeps `RLR_AUTH_MODE=off` by default.
 
-The app has a small in-memory limit of three sign-in emails per reviewer address per 15 minutes. This is appropriate for one small preview instance, not a public-scale abuse-prevention system.
+The app has a small in-memory limit of five failed sign-in attempts per reviewer account per 15 minutes. This is appropriate for one small preview instance, not a public-scale abuse-prevention system.
 
 ## Privacy And Operations
 

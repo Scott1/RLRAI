@@ -4,12 +4,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   AUTH_COOKIE_NAME,
+  authenticatePreviewAccount,
   createSessionCookie,
-  getAuthenticatedEmail,
+  getAuthenticatedUsername,
   getPreviewAuthConfig,
-  normalizeEmail,
-  sendMagicLink,
-  verifyMagicLink
+  normalizeUsername
 } from "./auth";
 import { answerQuestion } from "../chat";
 import { getConfig } from "../config";
@@ -25,7 +24,7 @@ const config = getConfig();
 const authConfig = getPreviewAuthConfig();
 const client = createOpenAIClient(config.apiKey);
 const histories = new Map<string, ChatMessage[]>();
-const magicLinkRequests = new Map<string, number[]>();
+const passwordLoginAttempts = new Map<string, number[]>();
 const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "public");
 const port = parsePort(process.env.PORT ?? process.env.RLR_WEB_PORT);
 const host = process.env.RLR_WEB_HOST ?? "127.0.0.1";
@@ -48,13 +47,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    if (request.method === "POST" && url.pathname === "/auth/request-link") {
-      await handleMagicLinkRequest(request, response);
-      return;
-    }
-
-    if (request.method === "GET" && url.pathname === "/auth/verify") {
-      handleMagicLinkVerification(url, response);
+    if (request.method === "POST" && url.pathname === "/auth/login") {
+      await handlePasswordLogin(request, response);
       return;
     }
 
@@ -68,7 +62,7 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    if (!getAuthenticatedEmail(request.headers.cookie, authConfig)) {
+    if (!getAuthenticatedUsername(request.headers.cookie, authConfig)) {
       if (url.pathname.startsWith("/api/")) {
         sendJson(response, 401, { error: "Sign in is required." });
       } else {
@@ -124,59 +118,42 @@ server.listen(port, host, () => {
   console.log(`Real Love Ready Companion web UI running at http://${host}:${port}`);
 });
 
-async function handleMagicLinkRequest(request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
+async function handlePasswordLogin(request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
   if (authConfig.mode === "off") {
     redirect(response, "/");
     return;
   }
 
   const form = await readForm(request);
-  const email = normalizeEmail(form.email);
-  if (email && authConfig.allowedEmails.has(email) && canRequestMagicLink(request, email)) {
-    try {
-      await sendMagicLink(authConfig, email);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`[auth] magic link email failed: ${message}`);
-      sendHtml(response, 503, requestLinkPage(true));
-      return;
-    }
-  }
+  const username = normalizeUsername(form.username) ?? "unknown";
+  const account = canAttemptPasswordLogin(request, username)
+    ? authenticatePreviewAccount(authConfig, form.username, form.password)
+    : undefined;
 
-  sendHtml(response, 200, requestLinkPage(false));
-}
-
-function handleMagicLinkVerification(url: URL, response: http.ServerResponse): void {
-  if (authConfig.mode === "off") {
-    redirect(response, "/");
-    return;
-  }
-
-  const email = verifyMagicLink(url.searchParams.get("token"), authConfig);
-  if (!email) {
-    sendHtml(response, 401, expiredLinkPage());
+  if (!account) {
+    sendHtml(response, 401, loginPage("That username or password did not match. Please try again."));
     return;
   }
 
   response.writeHead(303, {
     "Cache-Control": "no-store",
     Location: "/",
-    "Set-Cookie": createSessionCookie(authConfig, email)
+    "Set-Cookie": createSessionCookie(authConfig, account)
   });
   response.end();
 }
 
-function canRequestMagicLink(request: http.IncomingMessage, email: string): boolean {
-  const key = `${request.socket.remoteAddress ?? "unknown"}:${email}`;
+function canAttemptPasswordLogin(request: http.IncomingMessage, username: string): boolean {
+  const key = `${request.socket.remoteAddress ?? "unknown"}:${username}`;
   const now = Date.now();
   const windowStart = now - 15 * 60 * 1000;
-  const requests = (magicLinkRequests.get(key) ?? []).filter((timestamp) => timestamp > windowStart);
-  if (requests.length >= 3) {
-    magicLinkRequests.set(key, requests);
+  const attempts = (passwordLoginAttempts.get(key) ?? []).filter((timestamp) => timestamp > windowStart);
+  if (attempts.length >= 5) {
+    passwordLoginAttempts.set(key, attempts);
     return false;
   }
-  requests.push(now);
-  magicLinkRequests.set(key, requests);
+  attempts.push(now);
+  passwordLoginAttempts.set(key, attempts);
   return true;
 }
 
@@ -303,26 +280,13 @@ function sendJson(response: http.ServerResponse, status: number, body: unknown):
   response.end(JSON.stringify(body));
 }
 
-function loginPage(): string {
+function loginPage(message?: string): string {
   if (authConfig.mode === "off") {
     return page("Preview access is not enabled", "This local companion does not require a sign-in.", "Open companion", "/");
   }
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in | Real Love Ready Companion</title><style>${authStyles()}</style></head>
-<body><main><p class="eyebrow">Real Love Ready</p><h1>Companion preview</h1><p class="intro">Use your invited email address and we will send you a secure sign-in link.</p><form method="post" action="/auth/request-link"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required><button type="submit">Email me a sign-in link</button></form><p class="fine-print">This preview is for invited reviewers only.</p></main></body></html>`;
-}
-
-function requestLinkPage(failed: boolean): string {
-  return page(
-    failed ? "We could not send a link" : "Check your email",
-    failed ? "Please wait a moment, then request another sign-in link." : "If that address is approved for this preview, a sign-in link is on its way.",
-    failed ? "Return to sign in" : "Return to sign in",
-    "/login"
-  );
-}
-
-function expiredLinkPage(): string {
-  return page("That link has expired", "Sign-in links are valid for 15 minutes. Request a new one to continue.", "Request a new link", "/login");
+<body><main><p class="eyebrow">Real Love Ready</p><h1>Companion preview</h1><p class="intro">Sign in with the reviewer account you were given.</p>${message ? `<p class="form-message" role="alert">${message}</p>` : ""}<form method="post" action="/auth/login"><label for="username">Username</label><input id="username" name="username" autocomplete="username" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button type="submit">Sign in</button></form><p class="fine-print">This preview is for invited reviewers only.</p></main></body></html>`;
 }
 
 function page(title: string, body: string, action: string, href: string): string {
@@ -332,7 +296,7 @@ function page(title: string, body: string, action: string, href: string): string
 }
 
 function authStyles(): string {
-  return `:root{color-scheme:light}*{box-sizing:border-box}body{min-width:320px;margin:0;background:#fcf8f2;color:#302824;font-family:Inter,ui-sans-serif,system-ui,sans-serif}main{width:min(100% - 40px,480px);margin:12vh auto;padding:32px;border:1px solid #e7dbcf;border-radius:8px;background:#fffdfa;box-shadow:0 12px 28px rgba(67,46,34,.06)}.eyebrow{margin:0 0 10px;color:#934f48;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:32px;font-weight:600;line-height:1.15}.intro{margin:16px 0 24px;color:#756961;line-height:1.55}label{display:block;margin-bottom:7px;font-size:14px;font-weight:700}input{width:100%;padding:11px;border:1px solid #d8c9bd;border-radius:6px;background:#fff;color:#302824;font:inherit}input:focus{outline:2px solid #934f48;outline-offset:2px}button,.button{display:inline-block;margin-top:16px;padding:10px 14px;border:1px solid #934f48;border-radius:6px;background:#934f48;color:#fff;font:inherit;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer}.fine-print{margin:20px 0 0;color:#756961;font-size:12px;line-height:1.45}@media(max-width:500px){main{margin:40px auto;padding:24px}h1{font-size:28px}}`;
+  return `:root{color-scheme:light}*{box-sizing:border-box}body{min-width:320px;margin:0;background:#fcf8f2;color:#302824;font-family:Inter,ui-sans-serif,system-ui,sans-serif}main{width:min(100% - 40px,480px);margin:12vh auto;padding:32px;border:1px solid #e7dbcf;border-radius:8px;background:#fffdfa;box-shadow:0 12px 28px rgba(67,46,34,.06)}.eyebrow{margin:0 0 10px;color:#934f48;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:32px;font-weight:600;line-height:1.15}.intro{margin:16px 0 24px;color:#756961;line-height:1.55}label{display:block;margin:16px 0 7px;font-size:14px;font-weight:700}input{width:100%;padding:11px;border:1px solid #d8c9bd;border-radius:6px;background:#fff;color:#302824;font:inherit}input:focus{outline:2px solid #934f48;outline-offset:2px}button,.button{display:inline-block;margin-top:20px;padding:10px 14px;border:1px solid #934f48;border-radius:6px;background:#934f48;color:#fff;font:inherit;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer}.form-message{margin:0 0 16px;padding:10px;border-left:2px solid #9d4e45;background:#fff5f2;color:#9d4e45;font-size:14px;line-height:1.45}.fine-print{margin:20px 0 0;color:#756961;font-size:12px;line-height:1.45}@media(max-width:500px){main{margin:40px auto;padding:24px}h1{font-size:28px}}`;
 }
 
 class HttpError extends Error {

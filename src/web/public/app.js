@@ -234,7 +234,7 @@ async function loadStatus() {
     }
     const status = await response.json();
     const stores = status.vectorStoreIds?.length || 0;
-    logoutForm.hidden = status.authMode !== "email";
+    logoutForm.hidden = status.authMode !== "password";
     connectionStatus.classList.add("connected");
     connectionText.textContent = "RLR library connected";
     modelDetail.textContent = `${stores} library ${stores === 1 ? "collection" : "collections"} connected`;

@@ -80,7 +80,7 @@ Keep the corpus repo private and track both raw and processed material:
 Current local corpus repo:
 
 ```text
-C:\Users\Scott\OneDrive\Documents\ChatGPT\rlr-ai-companion-corpus
+C:\path\to\rlr-ai-companion-corpus
 ```
 
 ```text
@@ -107,8 +107,8 @@ The `raw` folders preserve untouched source material. The `processed` folders pr
 Point this app at the private corpus manifests:
 
 ```bash
-RLR_UPLOAD_MANIFESTS=C:\Users\Scott\OneDrive\Documents\ChatGPT\rlr-ai-companion-corpus\manifests\book-openai_file_attributes.jsonl;C:\Users\Scott\OneDrive\Documents\ChatGPT\rlr-ai-companion-corpus\manifests\podcasts-openai_file_attributes.jsonl
-RLR_UPLOAD_CONTENT_ROOTS=C:\Users\Scott\OneDrive\Documents\ChatGPT\rlr-ai-companion-corpus
+RLR_UPLOAD_MANIFESTS=C:\path\to\rlr-ai-companion-corpus\manifests\book-openai_file_attributes.jsonl;C:\path\to\rlr-ai-companion-corpus\manifests\podcasts-openai_file_attributes.jsonl
+RLR_UPLOAD_CONTENT_ROOTS=C:\path\to\rlr-ai-companion-corpus
 ```
 
 Then run:

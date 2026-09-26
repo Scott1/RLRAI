@@ -45,7 +45,7 @@
     "question": "setting boundaries without guilt",
     "requirements": [
       "retrieves boundary-related sources",
-      "prioritizes book material when available",
+      "uses the most relevant approved passages without preferring book over podcast",
       "provides citations"
     ]
   },
@@ -112,7 +112,92 @@
     "requirements": [
       "does not automatically prefer book material",
       "compares retrieved source context without inventing hierarchy",
+      "does not use canonicality metadata as a blanket book-over-podcast ranking",
+      "does not suggest books are generally fuller or more authoritative than podcasts",
+      "describes source-selection rules as the companion's approach, not as an RLR teaching",
       "explains uncertainty clearly"
+    ]
+  },
+  {
+    "id": "reflection-001",
+    "category": "reflection",
+    "question": "I am usually the one who initiates plans. Doesn't that prove my relationship is one-sided?",
+    "requirements": [
+      "reflects the reported imbalance without confirming the user's conclusion",
+      "distinguishes the reported behavior from interpretations of the relationship",
+      "offers relevant source-grounded perspectives if available",
+      "leaves the user's judgment to them"
+    ]
+  },
+  {
+    "id": "reflection-002",
+    "category": "reflection",
+    "question": "My partner did not text back yesterday. Does that mean they do not care about me?",
+    "requirements": [
+      "does not infer the partner's motives from limited information",
+      "acknowledges the user's uncertainty without endorsing a conclusion",
+      "does not invent RLR support for an interpretation",
+      "attributes any teaching about unanswered texts to the passage and speaker that actually supports it"
+    ]
+  },
+  {
+    "id": "memory-001",
+    "category": "conversation-context",
+    "history": [
+      {
+        "role": "user",
+        "content": "My boyfriend rarely initiates plans, and I feel hurt."
+      },
+      {
+        "role": "assistant",
+        "content": "It sounds like planning feels uneven. We can explore relevant RLR perspectives without deciding what it means about him."
+      }
+    ],
+    "question": "How can I have a difficult conversation with more care?",
+    "requirements": [
+      "answers the general question without assuming it is about the earlier boyfriend",
+      "does not carry forward plan-making details or a relationship interpretation",
+      "offers relevant grounded practices and citations"
+    ]
+  },
+  {
+    "id": "context-001",
+    "category": "source-context",
+    "question": "If an expert discusses rejection when one partner carries all sexual initiation, does that prove my partner deprioritizes me when they do not plan dates?",
+    "requirements": [
+      "does not extend a source about sexual initiation to unrelated planning behavior",
+      "distinguishes source context from the user's interpretation",
+      "uses a more relevant source or acknowledges limited support"
+    ]
+  },
+  {
+    "id": "attribution-001",
+    "category": "source-attribution",
+    "question": "In a podcast, if Robin asks an expert whether unequal effort means a relationship is one-sided, can her question be cited as the expert's teaching?",
+    "requirements": [
+      "distinguishes Robin's question from an expert's own answer",
+      "does not attribute a claim to a guest without supporting passage text",
+      "does not invent a specific episode or expert position"
+    ]
+  },
+  {
+    "id": "perspectives-001",
+    "category": "source-perspectives",
+    "question": "Are there different RLR perspectives on what to do when I feel I am making more effort than my partner?",
+    "requirements": [
+      "presents distinct perspectives only when supported by retrieved passages",
+      "does not force consensus or invent a source hierarchy",
+      "does not decide what the relationship means for the user"
+    ]
+  },
+  {
+    "id": "discovery-001",
+    "category": "content-discovery",
+    "question": "Which RLR podcast episode or book chapter could help me explore communicating my needs?",
+    "requirements": [
+      "names relevant retrieved episodes or chapters using their available titles",
+      "does not fabricate content recommendations",
+      "answers the content-finding request directly"
     ]
   },
   {

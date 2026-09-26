@@ -10,6 +10,7 @@ interface EvalCase {
   id: string;
   category: string;
   question: string;
+  history?: ChatMessage[];
   requirements: string[];
 }
 
@@ -17,6 +18,7 @@ interface EvalResult {
   id: string;
   category: string;
   question: string;
+  history?: ChatMessage[];
   requirements: string[];
   answer?: string;
   sources?: string[];
@@ -42,7 +44,7 @@ async function main(): Promise<void> {
   console.log("");
 
   for (const [index, testCase] of cases.entries()) {
-    const history: ChatMessage[] = [];
+    const history = testCase.history ?? [];
     const progress = `${index + 1}/${cases.length}`;
     process.stdout.write(`[${progress}] ${testCase.id} (${testCase.category})... `);
 
@@ -58,6 +60,7 @@ async function main(): Promise<void> {
         id: testCase.id,
         category: testCase.category,
         question: testCase.question,
+        history: testCase.history,
         requirements: testCase.requirements,
         answer: answer.answer,
         sources: answer.sources.map((source) => source.metadata.id),
@@ -76,6 +79,7 @@ async function main(): Promise<void> {
         id: testCase.id,
         category: testCase.category,
         question: testCase.question,
+        history: testCase.history,
         requirements: testCase.requirements,
         error: error instanceof Error ? error.message : String(error),
         status: "error"

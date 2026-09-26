@@ -132,6 +132,8 @@ p { margin: 0; }
 .source-list { display: grid; gap: 8px; padding: 12px 0 2px; }
 .source { display: grid; grid-template-columns: 66px 1fr; align-items: start; gap: 10px; padding: 10px; border-left: 2px solid var(--rose); background: #fff7f2; }
 .source-type { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.source-details { min-width: 0; }
+.source-work { color: var(--muted); font-size: 12px; line-height: 1.4; margin-bottom: 3px; }
 .source-title { color: var(--navy); font-size: 13px; line-height: 1.35; }
 a.source-title:hover { color: var(--rose-dark); }
 

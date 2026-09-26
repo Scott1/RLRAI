@@ -1,7 +1,9 @@
 import type { RetrievalResult, SourceCitation, SourceMetadata } from "./types";
 
+export const BOOK_DISPLAY_NAME = "Real Love Ready: A Guide to Relational Literacy by Robin Ducharme";
+
 export function sourceDisplayName(metadata: SourceMetadata): string {
-  const prefix = metadata.type === "book" ? "Real Love Ready" : "Let's Talk Love";
+  const prefix = metadata.type === "book" ? BOOK_DISPLAY_NAME : "Let's Talk Love";
   const dated = metadata.date ? `${metadata.title} (${metadata.date})` : metadata.title;
   return `${prefix} - ${dated}`;
 }

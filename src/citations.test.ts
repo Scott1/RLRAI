@@ -27,7 +27,7 @@ test("deduplicates citations by source document", () => {
 
 test("formats source list for humans", () => {
   const list = formatSourcesList(buildCitations([result]));
-  assert.match(list, /\[S1\] Real Love Ready - Demo Chapter/);
+  assert.match(list, /\[S1\] Real Love Ready: A Guide to Relational Literacy by Robin Ducharme - Demo Chapter/);
 });
 
 test("trims long excerpts", () => {

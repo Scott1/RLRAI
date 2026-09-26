@@ -11,6 +11,7 @@ import {
   normalizeUsername
 } from "./auth";
 import { answerQuestion } from "../chat";
+import { BOOK_DISPLAY_NAME } from "../citations";
 import { getConfig } from "../config";
 import { createOpenAIClient } from "../openai";
 import type { ChatMessage } from "../types";
@@ -183,6 +184,7 @@ async function handleChat(request: http.IncomingMessage, response: http.ServerRe
       id: source.metadata.id,
       title: source.metadata.title,
       type: source.metadata.type,
+      ...(source.metadata.type === "book" ? { workTitle: BOOK_DISPLAY_NAME } : {}),
       sourceUrl: source.metadata.source_url,
       score: source.score
     }))

@@ -204,6 +204,14 @@ function appendMessage(role, label, text, sources = [], details = {}) {
       const type = document.createElement("span");
       type.className = "source-type";
       type.textContent = source.type === "book" ? "Book" : "Podcast";
+      const sourceDetails = document.createElement("div");
+      sourceDetails.className = "source-details";
+      if (source.type === "book" && source.workTitle) {
+        const work = document.createElement("div");
+        work.className = "source-work";
+        work.textContent = source.workTitle;
+        sourceDetails.append(work);
+      }
       const title = document.createElement(source.sourceUrl ? "a" : "div");
       title.className = "source-title";
       title.textContent = source.title;
@@ -212,7 +220,8 @@ function appendMessage(role, label, text, sources = [], details = {}) {
         title.target = "_blank";
         title.rel = "noreferrer";
       }
-      item.append(type, title);
+      sourceDetails.append(title);
+      item.append(type, sourceDetails);
       sourceList.append(item);
     }
 

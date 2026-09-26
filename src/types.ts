@@ -9,6 +9,8 @@ export interface SourceMetadata {
   canonicality?: Canonicality;
   rights_status: "approved";
   source_url?: string;
+  podcast_page_url?: string;
+  transcript_url?: string;
   participants?: string[];
   date?: string;
   [key: string]: unknown;

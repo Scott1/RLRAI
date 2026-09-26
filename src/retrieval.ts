@@ -115,7 +115,11 @@ function metadataFromAttributes(attributes: Record<string, unknown>): SourceMeta
     title: stringAttribute(attributes.title, "Untitled source"),
     canonicality,
     rights_status: "approved",
-    source_url: optionalStringAttribute(attributes.source_url),
+    source_url: type === "podcast"
+      ? optionalStringAttribute(attributes.podcast_page_url)
+        ?? optionalStringAttribute(attributes.source_url)
+        ?? optionalStringAttribute(attributes.transcript_url)
+      : optionalStringAttribute(attributes.source_url),
     participants,
     date: optionalStringAttribute(attributes.date)
   };

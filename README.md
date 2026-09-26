@@ -35,7 +35,7 @@ Approved book and podcast material are treated as equal source material for the 
 - Current-session-only chat history.
 - Local browser UI for the same chat pipeline.
 - Retrieval debugging command.
-- Manual evaluation harness with 28 seeded tests.
+- Manual evaluation harness with 35 seeded tests.
 - Basic application-level safety routing.
 
 ## Setup
@@ -150,6 +150,16 @@ Podcast transcripts: 125
 Documents uploaded: 145
 Vector store: vs_xxxxx
 ```
+
+## Update Podcast Episode Links
+
+The private corpus repo tracks the episode-page crosswalk and its audit under `manifests/podcast_episode_crosswalk/`. To check an existing 145-file vector store without changing it:
+
+```bash
+npm run update:podcast-links -- --manifest ../rlr-ai-companion-corpus/manifests/podcast_episode_crosswalk/openai_file_attribute_updates.jsonl
+```
+
+Add `--apply` to update the 125 podcast file attributes in place. The command matches uploaded filenames, saves the previous attributes under `.rlr/`, and verifies the result. It does not re-upload files or create a new vector store. The private corpus upload manifest carries the same episode-page URLs for future ingests, with `source_url` retained for deployed app compatibility. Sources without an episode page link to their transcript instead.
 
 ## Chat
 

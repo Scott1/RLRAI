@@ -10,6 +10,7 @@
     "start": "npm run web",
     "build": "npm run typecheck",
     "ingest": "tsx src/ingestion/ingest.ts",
+    "update:podcast-links": "tsx scripts/updatePodcastLinks.ts",
     "retrieval": "tsx scripts/inspectRetrieval.ts",
     "eval": "tsx evals/runEvals.ts",
     "typecheck": "tsc --noEmit",

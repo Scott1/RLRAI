@@ -1,5 +1,5 @@
 import type OpenAI from "openai";
-import { buildCitations, citationKey, trimExcerpt } from "./citations";
+import { BOOK_URL, buildCitations, citationKey, trimExcerpt } from "./citations";
 import type { RetrievalResult, SourceCitation, SourceMetadata } from "./types";
 
 interface SearchOptions {
@@ -119,7 +119,7 @@ function metadataFromAttributes(attributes: Record<string, unknown>): SourceMeta
       ? optionalStringAttribute(attributes.podcast_page_url)
         ?? optionalStringAttribute(attributes.source_url)
         ?? optionalStringAttribute(attributes.transcript_url)
-      : optionalStringAttribute(attributes.source_url),
+      : BOOK_URL,
     participants,
     date: optionalStringAttribute(attributes.date)
   };

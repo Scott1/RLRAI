@@ -64,6 +64,8 @@ https://<service-name>.up.railway.app
 
 Set every value from this document in Railway Variables. Do not upload `.env`, the `.rlr` folder, or the private corpus repository.
 
+The feedback controls require persistent private storage. Attach a Railway volume to the Companion service at `/data`. Railway supplies `RAILWAY_VOLUME_MOUNT_PATH` automatically, and the app saves an append-only `feedback.jsonl` there. Feedback is disabled on Railway until a volume is attached. Check that a test submission remains visible in the admin dashboard after a redeploy before inviting reviewers to use the controls. The file contains reviewer usernames, submitted notes, reported answers, and review decisions; restrict access, enable volume backups, and plan a retention/deletion policy. Use one service replica with this file-based store.
+
 ## Manual Reviewer Accounts
 
 The app supports a small set of manually configured reviewer accounts. Each reviewer signs in with a username and password, then receives a signed, HTTP-only browser session. Removing an account or changing its password ends any existing session for that reviewer on its next request.
@@ -75,9 +77,12 @@ RLR_AUTH_MODE=password
 RLR_AUTH_SECRET=<long random secret>
 RLR_AUTH_SECURE_COOKIES=true
 RLR_PREVIEW_ACCOUNTS=reviewer-01|<long-password>;reviewer-02|<long-password>;reviewer-03|<long-password>;reviewer-04|<long-password>;reviewer-05|<long-password>
+RLR_ADMIN_ACCOUNT=scott|<unique-long-password>
 ```
 
-Use unique passwords of at least 12 characters. Treat `RLR_PREVIEW_ACCOUNTS` as a Railway secret, never as repository content. Add, remove, or rotate accounts by editing that variable and redeploying. Local development keeps `RLR_AUTH_MODE=off` by default.
+Use unique reviewer passwords of at least 12 characters and an admin password of at least 20 characters. Treat both account variables as Railway secrets, never as repository content. `RLR_ADMIN_ACCOUNT` creates a separate Scott login with access to `/admin`; reviewer accounts cannot open it. Add, remove, or rotate accounts by editing the relevant variable and redeploying. Local development keeps `RLR_AUTH_MODE=off` by default.
+
+The admin dashboard lists feedback and reports, records review status and private notes, and can export curated eval cases. A case is exported only when the admin explicitly marks it as a candidate and writes a sanitized question and expected behavior. The export does not include raw reviewer messages or reported answers. Review the downloaded file before adding selected cases to the repository's eval suite.
 
 The app has a small in-memory limit of five failed sign-in attempts per reviewer account per 15 minutes. This is appropriate for one small preview instance, not a public-scale abuse-prevention system.
 

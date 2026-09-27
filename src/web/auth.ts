@@ -18,6 +18,7 @@ export interface PreviewAccount {
 
 export interface PreviewAuthConfig {
   accounts: Map<string, PreviewAccount>;
+  adminUsername?: string;
   mode: "off" | "password";
   secret?: string;
   secureCookies: boolean;
@@ -35,12 +36,26 @@ export function getPreviewAuthConfig(environment = process.env): PreviewAuthConf
   }
 
   const accounts = parsePreviewAccounts(environment.RLR_PREVIEW_ACCOUNTS);
+  const adminAccount = parseAdminAccount(environment.RLR_ADMIN_ACCOUNT);
+  if (adminAccount) {
+    if (accounts.has(adminAccount.username)) {
+      throw new Error("The admin username must not also appear in RLR_PREVIEW_ACCOUNTS.");
+    }
+    accounts.set(adminAccount.username, adminAccount);
+  }
   const secret = environment.RLR_AUTH_SECRET;
   if (accounts.size === 0 || !secret) {
     throw new Error("Password preview access requires RLR_PREVIEW_ACCOUNTS and RLR_AUTH_SECRET.");
   }
 
-  return { accounts, mode: "password", secret, secureCookies };
+  return { accounts, adminUsername: adminAccount?.username, mode: "password", secret, secureCookies };
+}
+
+export function isPreviewAdmin(config: PreviewAuthConfig, username: string, host: string): boolean {
+  if (config.mode === "off") {
+    return username === "local" && (host === "127.0.0.1" || host === "localhost");
+  }
+  return username === config.adminUsername;
 }
 
 export function normalizeUsername(value: string | undefined): string | undefined {
@@ -129,6 +144,19 @@ function parsePreviewAccounts(value: string | undefined): Map<string, PreviewAcc
     accounts.set(username, { username, password });
   }
   return accounts;
+}
+
+function parseAdminAccount(value: string | undefined): PreviewAccount | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const separator = value.indexOf("|");
+  const username = normalizeUsername(value.slice(0, separator));
+  const password = value.slice(separator + 1);
+  if (separator < 0 || !username || password.length < 20 || /[;|]/.test(password)) {
+    throw new Error("RLR_ADMIN_ACCOUNT must be a unique username and password of at least 20 characters, separated by |.");
+  }
+  return { username, password };
 }
 
 function fingerprint(secret: string, account: PreviewAccount): string {

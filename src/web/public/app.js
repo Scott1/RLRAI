@@ -8,8 +8,30 @@ const connectionStatus = document.querySelector("#connectionStatus");
 const connectionText = document.querySelector("#connectionText");
 const modelDetail = document.querySelector("#modelDetail");
 const logoutForm = document.querySelector("#logoutForm");
+const mainMenu = document.querySelector("#mainMenu");
+const menuButton = document.querySelector("#menuButton");
+const menuPanel = document.querySelector("#menuPanel");
+const shareIdeaButton = document.querySelector("#shareIdeaButton");
+const adminDashboardLink = document.querySelector("#adminDashboardLink");
+const feedbackDialog = document.querySelector("#feedbackDialog");
+const feedbackForm = document.querySelector("#feedbackForm");
+const feedbackTitle = document.querySelector("#feedbackTitle");
+const feedbackContext = document.querySelector("#feedbackContext");
+const feedbackCategory = document.querySelector("#feedbackCategory");
+const feedbackComment = document.querySelector("#feedbackComment");
+const feedbackOptional = document.querySelector("#feedbackOptional");
+const feedbackQuestionOption = document.querySelector("#feedbackQuestionOption");
+const feedbackIncludeQuestion = document.querySelector("#feedbackIncludeQuestion");
+const feedbackError = document.querySelector("#feedbackError");
+const feedbackSubmit = document.querySelector("#feedbackSubmit");
+const feedbackNotice = document.querySelector("#feedbackNotice");
 
 let sessionId = localStorage.getItem("rlr-session-id") || crypto.randomUUID();
+let feedbackEnabled = false;
+let feedbackKind = "idea";
+let feedbackResponseId;
+let nextMessageId = 0;
+let noticeTimer;
 localStorage.setItem("rlr-session-id", sessionId);
 
 void loadStatus();
@@ -47,6 +69,54 @@ resetButton.addEventListener("click", async () => {
   appendWelcome();
   input.focus();
   resetButton.disabled = false;
+});
+
+menuButton.addEventListener("click", () => setMenuOpen(menuPanel.hidden));
+document.addEventListener("pointerdown", (event) => {
+  if (!mainMenu.contains(event.target)) {
+    setMenuOpen(false);
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setMenuOpen(false);
+  }
+});
+
+shareIdeaButton.addEventListener("click", () => {
+  setMenuOpen(false);
+  openFeedback("idea");
+});
+document.querySelector("#feedbackClose").addEventListener("click", () => feedbackDialog.close());
+document.querySelector("#feedbackCancel").addEventListener("click", () => feedbackDialog.close());
+
+feedbackForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  feedbackError.hidden = true;
+  feedbackSubmit.disabled = true;
+  try {
+    const response = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: feedbackKind,
+        category: feedbackCategory.value,
+        comment: feedbackComment.value,
+        ...(feedbackKind === "report" ? { responseId: feedbackResponseId, includeQuestion: feedbackIncludeQuestion.checked } : {})
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || "Your feedback could not be sent.");
+    }
+    feedbackDialog.close();
+    showNotice("Feedback sent. Thank you.");
+  } catch (error) {
+    feedbackError.textContent = error instanceof Error ? error.message : "Your feedback could not be sent.";
+    feedbackError.hidden = false;
+  } finally {
+    feedbackSubmit.disabled = false;
+  }
 });
 
 async function sendQuestion(questionText) {
@@ -146,6 +216,7 @@ function appendErrorMessage(text) {
 function appendMessage(role, label, text, sources = [], details = {}) {
   const article = document.createElement("article");
   article.className = `message ${role}`;
+  const { sourceGroup, citationTargets } = createSourceGroup(sources, ++nextMessageId);
   const heading = document.createElement("div");
   heading.className = "message-heading";
   const labelEl = document.createElement("div");
@@ -163,7 +234,7 @@ function appendMessage(role, label, text, sources = [], details = {}) {
   const body = document.createElement(role === "assistant" ? "div" : "p");
   body.className = "message-body";
   if (role === "assistant") {
-    appendFormattedAssistantText(body, text);
+    appendFormattedAssistantText(body, text, citationTargets, sourceGroup);
   } else {
     body.textContent = text;
   }
@@ -178,7 +249,7 @@ function appendMessage(role, label, text, sources = [], details = {}) {
     copy.textContent = "Copy response";
     copy.addEventListener("click", async () => {
       try {
-        await globalThis.navigator.clipboard.writeText(text);
+        await globalThis.navigator.clipboard.writeText(formatResponseForCopy(text, sources));
         copy.textContent = "Copied";
         globalThis.setTimeout(() => { copy.textContent = "Copy response"; }, 1800);
       } catch {
@@ -186,46 +257,19 @@ function appendMessage(role, label, text, sources = [], details = {}) {
       }
     });
     actions.append(copy);
+    if (details.responseId) {
+      const report = document.createElement("button");
+      report.className = "report-button";
+      report.type = "button";
+      report.textContent = "Report this response";
+      report.hidden = !feedbackEnabled;
+      report.addEventListener("click", () => openFeedback("report", details.responseId));
+      actions.append(report);
+    }
     article.append(actions);
   }
 
-  if (sources?.length) {
-    const sourceGroup = document.createElement("details");
-    sourceGroup.className = "sources";
-    const summary = document.createElement("summary");
-    summary.textContent = `${sources.length} source${sources.length === 1 ? "" : "s"} from the RLR library`;
-    sourceGroup.append(summary);
-    const sourceList = document.createElement("div");
-    sourceList.className = "source-list";
-
-    for (const source of sources) {
-      const item = document.createElement("div");
-      item.className = "source";
-      const type = document.createElement("span");
-      type.className = "source-type";
-      type.textContent = source.type === "book" ? "Book" : "Podcast";
-      const sourceDetails = document.createElement("div");
-      sourceDetails.className = "source-details";
-      if (source.type === "book" && source.workTitle) {
-        const work = document.createElement("div");
-        work.className = "source-work";
-        work.textContent = source.workTitle;
-        sourceDetails.append(work);
-      }
-      const title = document.createElement(source.sourceUrl ? "a" : "div");
-      title.className = "source-title";
-      title.textContent = source.title;
-      if (source.sourceUrl) {
-        title.href = source.sourceUrl;
-        title.target = "_blank";
-        title.rel = "noreferrer";
-      }
-      sourceDetails.append(title);
-      item.append(type, sourceDetails);
-      sourceList.append(item);
-    }
-
-    sourceGroup.append(sourceList);
+  if (sourceGroup) {
     article.append(sourceGroup);
   }
 
@@ -233,7 +277,73 @@ function appendMessage(role, label, text, sources = [], details = {}) {
   article.scrollIntoView({ behavior: "smooth", block: "end" });
 }
 
-function appendFormattedAssistantText(container, text) {
+function createSourceGroup(sources, messageId) {
+  const citationTargets = new Map();
+  if (!sources?.length) {
+    return { sourceGroup: null, citationTargets };
+  }
+
+  const sourceGroup = document.createElement("details");
+  sourceGroup.className = "sources";
+  const summary = document.createElement("summary");
+  summary.textContent = `Sources from the RLR library (${sources.length})`;
+  sourceGroup.append(summary);
+  const sourceList = document.createElement("div");
+  sourceList.className = "source-list";
+
+  for (const [index, source] of sources.entries()) {
+    const number = index + 1;
+    const item = document.createElement("div");
+    item.className = "source";
+    item.id = `source-${messageId}-${number}`;
+    item.tabIndex = -1;
+    citationTargets.set(source.key, { number, item, title: source.title });
+
+    const numberEl = document.createElement("span");
+    numberEl.className = "source-number";
+    numberEl.textContent = String(number);
+    const type = document.createElement("span");
+    type.className = "source-type";
+    type.textContent = source.type === "book" ? "Book" : "Podcast";
+    const sourceDetails = document.createElement("div");
+    sourceDetails.className = "source-details";
+    if (source.type === "book" && source.workTitle) {
+      const work = document.createElement("div");
+      work.className = "source-work";
+      work.textContent = source.workTitle;
+      sourceDetails.append(work);
+    }
+
+    const url = safeSourceUrl(source.sourceUrl);
+    const title = document.createElement(url ? "a" : "div");
+    title.className = "source-title";
+    title.textContent = source.title;
+    if (url) {
+      title.href = url;
+      title.target = "_blank";
+      title.rel = "noreferrer";
+    }
+    sourceDetails.append(title);
+    item.append(numberEl, type, sourceDetails);
+
+    if (url) {
+      const share = document.createElement("button");
+      share.className = "source-share";
+      share.type = "button";
+      share.textContent = "Share";
+      share.title = `Share ${source.title}`;
+      share.setAttribute("aria-label", `Share source ${number}: ${source.title}`);
+      share.addEventListener("click", () => { void shareSource(source.title, url, share); });
+      item.append(share);
+    }
+    sourceList.append(item);
+  }
+
+  sourceGroup.append(sourceList);
+  return { sourceGroup, citationTargets };
+}
+
+function appendFormattedAssistantText(container, text, citationTargets, sourceGroup) {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
   let paragraphLines = [];
   let list;
@@ -244,7 +354,7 @@ function appendFormattedAssistantText(container, text) {
     }
 
     const paragraph = document.createElement("p");
-    appendInlineFormatting(paragraph, paragraphLines.join(" "));
+    appendInlineFormatting(paragraph, paragraphLines.join(" "), citationTargets, sourceGroup);
     container.append(paragraph);
     paragraphLines = [];
   };
@@ -262,7 +372,7 @@ function appendFormattedAssistantText(container, text) {
       flushParagraph();
       list ??= document.createElement("ul");
       const item = document.createElement("li");
-      appendInlineFormatting(item, listItem[1]);
+      appendInlineFormatting(item, listItem[1], citationTargets, sourceGroup);
       list.append(item);
       continue;
     }
@@ -281,21 +391,133 @@ function appendFormattedAssistantText(container, text) {
   flushList();
 }
 
-function appendInlineFormatting(container, text) {
+function appendInlineFormatting(container, text, citationTargets, sourceGroup) {
   const boldPattern = /(\*\*|__)(.+?)\1/g;
   let lastIndex = 0;
 
   for (const match of text.matchAll(boldPattern)) {
     const matchStart = match.index ?? 0;
-    container.append(document.createTextNode(text.slice(lastIndex, matchStart)));
+    appendCitationText(container, text.slice(lastIndex, matchStart), citationTargets, sourceGroup);
 
     const strong = document.createElement("strong");
-    strong.textContent = match[2];
+    appendCitationText(strong, match[2], citationTargets, sourceGroup);
     container.append(strong);
     lastIndex = matchStart + match[0].length;
   }
 
+  appendCitationText(container, text.slice(lastIndex), citationTargets, sourceGroup);
+}
+
+function appendCitationText(container, text, citationTargets, sourceGroup) {
+  let lastIndex = 0;
+  for (const match of text.matchAll(/\[S\d+\]/g)) {
+    const matchStart = match.index ?? 0;
+    container.append(document.createTextNode(text.slice(lastIndex, matchStart)));
+    const target = citationTargets.get(match[0].slice(1, -1));
+    if (target) {
+      const link = document.createElement("a");
+      link.className = "citation-ref";
+      link.href = `#${target.item.id}`;
+      link.textContent = String(target.number);
+      link.title = `View source ${target.number}: ${target.title}`;
+      link.setAttribute("aria-label", `View source ${target.number}: ${target.title}`);
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        sourceGroup.open = true;
+        globalThis.requestAnimationFrame(() => {
+          target.item.focus({ preventScroll: true });
+          target.item.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          target.item.classList.add("source-highlight");
+          globalThis.setTimeout(() => target.item.classList.remove("source-highlight"), 2000);
+        });
+      });
+      container.append(link);
+    } else {
+      const missing = document.createElement("span");
+      missing.className = "citation-missing";
+      missing.textContent = "[source unavailable]";
+      container.append(missing);
+    }
+    lastIndex = matchStart + match[0].length;
+  }
   container.append(document.createTextNode(text.slice(lastIndex)));
+}
+
+function safeSourceUrl(value) {
+  try {
+    const url = new globalThis.URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatResponseForCopy(text, sources) {
+  const sourceNumbers = new Map(sources.map((source, index) => [source.key, index + 1]));
+  const answer = text.replace(/\[S\d+\]/g, (marker) => {
+    const number = sourceNumbers.get(marker.slice(1, -1));
+    return number ? `[${number}]` : "[source unavailable]";
+  });
+  if (!sources.length) {
+    return answer;
+  }
+  const sourceLines = sources.map((source, index) => {
+    const name = source.workTitle ? `${source.workTitle} - ${source.title}` : source.title;
+    const url = safeSourceUrl(source.sourceUrl);
+    return `${index + 1}. ${name}${url ? ` - ${url}` : ""}`;
+  });
+  return `${answer}\n\nSources:\n${sourceLines.join("\n")}`;
+}
+
+async function shareSource(title, url, button) {
+  try {
+    await globalThis.navigator.clipboard.writeText(url);
+    button.textContent = "Copied";
+    showNotice(`Link to ${title} copied.`);
+    globalThis.setTimeout(() => { button.textContent = "Share"; }, 1800);
+  } catch {
+    showNotice("Unable to share this link from this browser.");
+  }
+}
+
+function openFeedback(kind, responseId) {
+  if (!feedbackEnabled) {
+    return;
+  }
+  feedbackKind = kind;
+  feedbackResponseId = responseId;
+  feedbackForm.reset();
+  feedbackError.hidden = true;
+  feedbackCategory.replaceChildren();
+  const choices = kind === "idea"
+    ? [["feature_request", "Feature request"], ["general_idea", "General idea"], ["other_feedback", "Other feedback"]]
+    : [["inaccurate_source", "Inaccurate source"], ["overconfident_advice", "Overconfident advice"], ["safety_concern", "Safety concern"], ["not_rlr", "Doesn't feel like RLR"], ["other", "Something else"]];
+  const placeholder = new globalThis.Option("Choose one", "", true, true);
+  placeholder.disabled = true;
+  feedbackCategory.add(placeholder);
+  for (const [value, label] of choices) {
+    feedbackCategory.add(new globalThis.Option(label, value));
+  }
+  feedbackTitle.textContent = kind === "idea" ? "Share an idea" : "Report this response";
+  feedbackContext.textContent = "This report includes this answer and its source references. Your question is only included if you choose the option below.";
+  feedbackContext.hidden = kind !== "report";
+  feedbackQuestionOption.hidden = kind !== "report";
+  feedbackOptional.hidden = kind !== "report";
+  feedbackComment.required = kind === "idea";
+  feedbackDialog.showModal();
+  feedbackCategory.focus();
+}
+
+function showNotice(text) {
+  feedbackNotice.textContent = text;
+  feedbackNotice.hidden = false;
+  globalThis.clearTimeout(noticeTimer);
+  noticeTimer = globalThis.setTimeout(() => { feedbackNotice.hidden = true; }, 3500);
+}
+
+function setMenuOpen(isOpen) {
+  menuPanel.hidden = !isOpen;
+  menuButton.setAttribute("aria-expanded", String(isOpen));
 }
 
 function setBusy(isBusy, text) {
@@ -313,6 +535,11 @@ async function loadStatus() {
     const status = await response.json();
     const stores = status.vectorStoreIds?.length || 0;
     logoutForm.hidden = status.authMode !== "password";
+    feedbackEnabled = status.feedbackEnabled === true;
+    shareIdeaButton.hidden = !feedbackEnabled;
+    adminDashboardLink.hidden = status.admin !== true;
+    mainMenu.hidden = !feedbackEnabled && logoutForm.hidden && adminDashboardLink.hidden;
+    document.querySelectorAll(".report-button").forEach((button) => { button.hidden = !feedbackEnabled; });
     connectionStatus.classList.add("connected");
     connectionText.textContent = "RLR library connected";
     modelDetail.textContent = `${stores} library ${stores === 1 ? "collection" : "collections"} connected`;

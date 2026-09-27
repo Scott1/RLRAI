@@ -1,6 +1,7 @@
 import type { RetrievalResult, SourceCitation, SourceMetadata } from "./types";
 
 export const BOOK_DISPLAY_NAME = "Real Love Ready: A Guide to Relational Literacy by Robin Ducharme";
+export const BOOK_URL = "https://www.realloveready.com/book";
 
 export function sourceDisplayName(metadata: SourceMetadata): string {
   const prefix = metadata.type === "book" ? BOOK_DISPLAY_NAME : "Let's Talk Love";
@@ -35,6 +36,23 @@ export function buildCitations(results: RetrievalResult[]): SourceCitation[] {
   }
 
   return [...byDocument.values()];
+}
+
+export function citedSources(answer: string, sources: SourceCitation[]): SourceCitation[] {
+  const byKey = new Map(sources.map((source) => [source.key, source]));
+  const cited: SourceCitation[] = [];
+  const seen = new Set<string>();
+
+  for (const match of answer.matchAll(/\[S\d+\]/g)) {
+    const key = match[0].slice(1, -1);
+    const source = byKey.get(key);
+    if (source && !seen.has(key)) {
+      cited.push(source);
+      seen.add(key);
+    }
+  }
+
+  return cited;
 }
 
 export function formatSourcesList(sources: SourceCitation[]): string {

@@ -8,13 +8,15 @@ import {
   createSessionCookie,
   getAuthenticatedUsername,
   getPreviewAuthConfig,
+  isPreviewAdmin,
   normalizeUsername
 } from "./auth";
 import { answerQuestion } from "../chat";
-import { BOOK_DISPLAY_NAME } from "../citations";
+import { BOOK_DISPLAY_NAME, citedSources } from "../citations";
 import { getConfig } from "../config";
 import { createOpenAIClient } from "../openai";
 import type { ChatMessage } from "../types";
+import { appendFeedback, buildEvalCases, listFeedback, parseFeedbackSubmission, parseReviewSubmission, resolveFeedbackFile, saveFeedbackReview } from "./feedback";
 
 interface ChatRequest {
   sessionId?: string;
@@ -25,10 +27,19 @@ const config = getConfig();
 const authConfig = getPreviewAuthConfig();
 const client = createOpenAIClient(config.apiKey);
 const histories = new Map<string, ChatMessage[]>();
+const reportableResponses = new Map<string, {
+  username: string;
+  question: string;
+  answer: string;
+  sources: Array<{ key: string; id: string; title: string; sourceUrl?: string }>;
+  createdAt: number;
+}>();
 const passwordLoginAttempts = new Map<string, number[]>();
 const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "public");
+const adminHtmlPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "admin.html");
 const port = parsePort(process.env.PORT ?? process.env.RLR_WEB_PORT);
 const host = process.env.RLR_WEB_HOST ?? "127.0.0.1";
+const feedbackFile = resolveFeedbackFile(config.rootDir, host);
 
 const server = http.createServer(async (request, response) => {
   try {
@@ -63,7 +74,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    if (!getAuthenticatedUsername(request.headers.cookie, authConfig)) {
+    const username = getAuthenticatedUsername(request.headers.cookie, authConfig);
+    if (!username) {
       if (url.pathname.startsWith("/api/")) {
         sendJson(response, 401, { error: "Sign in is required." });
       } else {
@@ -72,18 +84,65 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    const admin = isPreviewAdmin(authConfig, username, host);
+    if ((url.pathname === "/admin" || url.pathname.startsWith("/api/admin/")) && !admin) {
+      if (url.pathname.startsWith("/api/")) {
+        sendJson(response, 403, { error: "Admin access is required." });
+      } else {
+        sendHtml(response, 403, page("Admin access required", "This page is available only to the preview administrator.", "Return to companion", "/"));
+      }
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/status") {
       sendJson(response, 200, {
         authMode: authConfig.mode,
+        admin,
         model: config.model,
         vectorStoreIds: config.vectorStoreIds,
-        retrievalMaxResults: config.retrievalMaxResults
+        retrievalMaxResults: config.retrievalMaxResults,
+        feedbackEnabled: Boolean(feedbackFile)
       });
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/admin") {
+      const html = await fs.readFile(adminHtmlPath, "utf8");
+      sendHtml(response, 200, html, { "Content-Security-Policy": "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/feedback") {
+      if (!feedbackFile) {
+        throw new HttpError(503, "Persistent feedback storage is not available.");
+      }
+      sendJson(response, 200, { feedback: await listFeedback(feedbackFile) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/eval-cases") {
+      if (!feedbackFile) {
+        throw new HttpError(503, "Persistent feedback storage is not available.");
+      }
+      sendJson(response, 200, buildEvalCases(await listFeedback(feedbackFile)), {
+        "Content-Disposition": "attachment; filename=rlr-eval-candidates.json"
+      });
+      return;
+    }
+
+    const reviewRoute = url.pathname.match(/^\/api\/admin\/feedback\/([0-9a-f-]{36})\/review$/i);
+    if (request.method === "POST" && reviewRoute) {
+      await handleAdminReview(request, response, username, reviewRoute[1]);
+      return;
+    }
+
     if (request.method === "POST" && url.pathname === "/api/chat") {
-      await handleChat(request, response);
+      await handleChat(request, response, username);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/feedback") {
+      await handleFeedback(request, response, username);
       return;
     }
 
@@ -158,7 +217,7 @@ function canAttemptPasswordLogin(request: http.IncomingMessage, username: string
   return true;
 }
 
-async function handleChat(request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
+async function handleChat(request: http.IncomingMessage, response: http.ServerResponse, username: string): Promise<void> {
   const body = await readJson<ChatRequest>(request);
   const sessionId = body.sessionId?.trim() || crypto.randomUUID();
   const question = body.question?.trim();
@@ -174,21 +233,110 @@ async function handleChat(request: http.IncomingMessage, response: http.ServerRe
   history.push({ role: "assistant", content: answer.answer });
   histories.set(sessionId, history.slice(-12));
 
+  const sources = citedSources(answer.answer, answer.sources).map((source) => ({
+    key: source.key,
+    id: source.metadata.id,
+    title: source.metadata.title,
+    type: source.metadata.type,
+    ...(source.metadata.type === "book" ? { workTitle: BOOK_DISPLAY_NAME } : {}),
+    sourceUrl: source.metadata.source_url,
+    score: source.score
+  }));
+  const responseId = crypto.randomUUID();
+  reportableResponses.set(responseId, {
+    username,
+    question,
+    answer: answer.answer,
+    sources: sources.map(({ key, id, title, sourceUrl }) => ({ key, id, title, sourceUrl })),
+    createdAt: Date.now()
+  });
+  if (reportableResponses.size > 200) {
+    reportableResponses.delete(reportableResponses.keys().next().value!);
+  }
+
   sendJson(response, 200, {
     sessionId,
+    responseId,
     answer: answer.answer,
     insufficientEvidence: answer.insufficientEvidence,
     safetyCategory: answer.safetyCategory,
-    sources: answer.sources.map((source) => ({
-      key: source.key,
-      id: source.metadata.id,
-      title: source.metadata.title,
-      type: source.metadata.type,
-      ...(source.metadata.type === "book" ? { workTitle: BOOK_DISPLAY_NAME } : {}),
-      sourceUrl: source.metadata.source_url,
-      score: source.score
-    }))
+    sources
   });
+}
+
+async function handleFeedback(request: http.IncomingMessage, response: http.ServerResponse, username: string): Promise<void> {
+  if (!feedbackFile) {
+    throw new HttpError(503, "Feedback is not enabled for this preview yet.");
+  }
+  requireSameOriginJson(request);
+
+  let submission;
+  try {
+    submission = parseFeedbackSubmission(await readJson<unknown>(request));
+  } catch (error) {
+    throw new HttpError(400, error instanceof Error ? error.message : "Invalid feedback.");
+  }
+
+  const referencedResponse = submission.responseId ? reportableResponses.get(submission.responseId) : undefined;
+  if (submission.kind === "report" && (
+    !referencedResponse
+    || referencedResponse.username !== username
+    || Date.now() - referencedResponse.createdAt > 24 * 60 * 60 * 1000
+  )) {
+    throw new HttpError(410, "This answer is no longer available to report. Please ask again and report the new response.");
+  }
+
+  await appendFeedback(feedbackFile, {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    username,
+    kind: submission.kind,
+    category: submission.category,
+    comment: submission.comment,
+    model: config.model,
+    ...(referencedResponse ? {
+      responseId: submission.responseId,
+      response: referencedResponse.answer,
+      sources: referencedResponse.sources,
+      ...(submission.includeQuestion ? { question: referencedResponse.question } : {})
+    } : {})
+  });
+  sendJson(response, 201, { ok: true });
+}
+
+async function handleAdminReview(request: http.IncomingMessage, response: http.ServerResponse, admin: string, feedbackId: string): Promise<void> {
+  if (!feedbackFile) {
+    throw new HttpError(503, "Persistent feedback storage is not available.");
+  }
+  requireSameOriginJson(request);
+  let review;
+  try {
+    review = parseReviewSubmission(await readJson<unknown>(request));
+  } catch (error) {
+    throw new HttpError(400, error instanceof Error ? error.message : "Invalid review.");
+  }
+  const updated = await saveFeedbackReview(feedbackFile, feedbackId, admin, review);
+  if (!updated) {
+    throw new HttpError(404, "Feedback item not found.");
+  }
+  sendJson(response, 200, { feedback: updated });
+}
+
+function requireSameOriginJson(request: http.IncomingMessage): void {
+  if (request.headers["content-type"]?.split(";")[0]?.trim().toLowerCase() !== "application/json") {
+    throw new HttpError(415, "This request must be sent as JSON.");
+  }
+  if (request.headers.origin) {
+    let originHost: string;
+    try {
+      originHost = new URL(request.headers.origin).host;
+    } catch {
+      throw new HttpError(403, "This request must come from this preview.");
+    }
+    if (originHost.toLowerCase() !== request.headers.host?.toLowerCase()) {
+      throw new HttpError(403, "This request must come from this preview.");
+    }
+  }
 }
 
 async function serveStatic(urlPath: string, response: http.ServerResponse): Promise<void> {
@@ -264,20 +412,23 @@ function redirect(response: http.ServerResponse, location: string): void {
   response.end();
 }
 
-function sendHtml(response: http.ServerResponse, status: number, body: string): void {
+function sendHtml(response: http.ServerResponse, status: number, body: string, additionalHeaders: Record<string, string> = {}): void {
   response.writeHead(status, {
     "Cache-Control": "no-store",
     "Content-Type": "text/html; charset=utf-8",
-    "X-Content-Type-Options": "nosniff"
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    ...additionalHeaders
   });
   response.end(body);
 }
 
-function sendJson(response: http.ServerResponse, status: number, body: unknown): void {
+function sendJson(response: http.ServerResponse, status: number, body: unknown, additionalHeaders: Record<string, string> = {}): void {
   response.writeHead(status, {
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8",
-    "X-Content-Type-Options": "nosniff"
+    "X-Content-Type-Options": "nosniff",
+    ...additionalHeaders
   });
   response.end(JSON.stringify(body));
 }

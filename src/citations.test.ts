@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildCitations, formatSourcesList, trimExcerpt } from "./citations";
+import { buildCitations, citedSources, formatSourcesList, trimExcerpt } from "./citations";
 import type { RetrievalResult } from "./types";
 
 const result: RetrievalResult = {
@@ -28,6 +28,16 @@ test("deduplicates citations by source document", () => {
 test("formats source list for humans", () => {
   const list = formatSourcesList(buildCitations([result]));
   assert.match(list, /\[S1\] Real Love Ready: A Guide to Relational Literacy by Robin Ducharme - Demo Chapter/);
+});
+
+test("returns only cited sources in their first mention order", () => {
+  const sources = buildCitations([
+    result,
+    { ...result, id: "other:0", metadata: { ...result.metadata, id: "other", title: "Other Chapter" } },
+    { ...result, id: "third:0", metadata: { ...result.metadata, id: "third", title: "Third Chapter" } }
+  ]);
+  assert.deepEqual(citedSources("A point [S3], another [S1], repeated [S3], unknown [S9].", sources).map((source) => source.key), ["S3", "S1"]);
+  assert.deepEqual(citedSources("No source labels here.", sources), []);
 });
 
 test("trims long excerpts", () => {

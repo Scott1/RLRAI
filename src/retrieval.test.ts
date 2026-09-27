@@ -33,8 +33,7 @@ test("prefers podcast episode pages and falls back to transcript pages", async (
             attributes: {
               source_id: "rlr-book-001",
               type: "book",
-              title: "Book chapter",
-              source_url: "https://www.realloveready.com/book"
+              title: "Book chapter"
             },
             content: [{ text: "Third passage." }]
           }

@@ -183,6 +183,12 @@ http://localhost:3000
 
 The web UI runs locally and uses the same retrieval, system prompt, safety checks, and answer generation path as the CLI. Conversation history is kept in memory by the local server and can be reset from the page.
 
+Inline source numbers open the matching item below each answer. The list contains only sources cited in that answer, in the order first mentioned. Book sources link to the [Real Love Ready book page](https://www.realloveready.com/book); podcast sources use their episode page when available. The **Share** action on a source row copies its link.
+
+Reviewers can use **Share an idea** in the menu or **Report this response** beside an answer. Local feedback is saved to the ignored `.rlr/feedback.jsonl` file. A report saves that answer and its cited sources; the user's question is included only if they check the option. Other conversation turns are not saved. The private `/admin` dashboard shows submissions and lets the administrator track review status, notes, and eval candidates.
+
+For the Railway preview, feedback stays disabled until a private volume is mounted on the service. The app writes to Railway's `RAILWAY_VOLUME_MOUNT_PATH` automatically. Do not use the deployment's temporary filesystem: reports would be lost after a restart. Confirm a submission survives a redeploy before inviting reviewers to use the controls. A separate `RLR_ADMIN_ACCOUNT` grants Scott access to the dashboard; other reviewer accounts have no access. The dashboard exports only admin-written, sanitized eval cases, never raw feedback automatically.
+
 For a hosting-ready command, use:
 
 ```bash
@@ -224,6 +230,7 @@ This is not a complete safety system. High-risk situations should be directed to
 ## Privacy Boundaries
 
 - Normal CLI conversations are not persisted locally.
+- Web conversation history is held in server memory. Feedback submissions are the exception and are stored as described above.
 - Eval/debug runs save questions, answers, retrieval snippets, and citations.
 - API keys are loaded from environment variables and are never logged intentionally.
 - OpenAI receives the user question, recent in-memory chat turns, and retrieved source excerpts needed to generate the response.

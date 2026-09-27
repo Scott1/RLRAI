@@ -6,6 +6,7 @@ import {
   createSignedToken,
   getAuthenticatedUsername,
   getPreviewAuthConfig,
+  isPreviewAdmin,
   normalizeUsername,
   verifySignedToken,
   type PreviewAuthConfig
@@ -61,4 +62,27 @@ test("reads configured accounts from environment-style settings", () => {
   });
   assert.equal(parsed.accounts.size, 2);
   assert.equal(parsed.accounts.get("reviewer-02")?.password, "another-long-password");
+});
+
+test("keeps admin access separate from reviewer access", () => {
+  const parsed = getPreviewAuthConfig({
+    RLR_AUTH_MODE: "password",
+    RLR_AUTH_SECRET: "test-secret",
+    RLR_PREVIEW_ACCOUNTS: "reviewer-01|correct-horse-battery",
+    RLR_ADMIN_ACCOUNT: "scott|an-admin-password-longer-than-twenty"
+  });
+  assert.equal(isPreviewAdmin(parsed, "scott", "0.0.0.0"), true);
+  assert.equal(isPreviewAdmin(parsed, "reviewer-01", "0.0.0.0"), false);
+  assert.ok(authenticatePreviewAccount(parsed, "scott", "an-admin-password-longer-than-twenty"));
+  assert.equal(isPreviewAdmin({ accounts: new Map(), mode: "off", secureCookies: false }, "local", "127.0.0.1"), true);
+  assert.equal(isPreviewAdmin({ accounts: new Map(), mode: "off", secureCookies: false }, "local", "0.0.0.0"), false);
+});
+
+test("rejects a duplicate admin username", () => {
+  assert.throws(() => getPreviewAuthConfig({
+    RLR_AUTH_MODE: "password",
+    RLR_AUTH_SECRET: "test-secret",
+    RLR_PREVIEW_ACCOUNTS: "scott|correct-horse-battery",
+    RLR_ADMIN_ACCOUNT: "scott|an-admin-password-longer-than-twenty"
+  }));
 });

@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 
 export default [
   {
-    ignores: ["dist/**", "node_modules/**", "evals/results/**"]
+    ignores: ["dist/**", "node_modules/**", "evals/results/**", ".rlr/**"]
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -28,7 +28,8 @@ export default [
         crypto: "readonly",
         document: "readonly",
         fetch: "readonly",
-        localStorage: "readonly"
+        localStorage: "readonly",
+        URL: "readonly"
       }
     }
   }

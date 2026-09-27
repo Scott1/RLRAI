@@ -19,10 +19,17 @@
             <span class="status-dot" aria-hidden="true"></span>
             <span id="connectionText">Connecting</span>
           </div>
-          <form id="logoutForm" class="logout-form" method="post" action="/auth/logout" hidden>
-            <button class="quiet-button" type="submit">Sign out</button>
-          </form>
           <button id="resetButton" class="quiet-button" type="button">New conversation</button>
+          <div id="mainMenu" class="main-menu" hidden>
+            <button id="menuButton" class="quiet-button" type="button" aria-expanded="false" aria-controls="menuPanel">Menu</button>
+            <div id="menuPanel" class="menu-panel" hidden>
+              <button id="shareIdeaButton" type="button" hidden>Share an idea</button>
+              <a id="adminDashboardLink" href="/admin" hidden>Feedback dashboard</a>
+              <form id="logoutForm" class="logout-form" method="post" action="/auth/logout" hidden>
+                <button type="submit">Sign out</button>
+              </form>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -62,6 +69,29 @@
         <span id="modelDetail">Checking RLR library connection...</span>
       </footer>
     </main>
+    <dialog id="feedbackDialog" class="feedback-dialog" aria-labelledby="feedbackTitle">
+      <form id="feedbackForm">
+        <div class="feedback-heading">
+          <h2 id="feedbackTitle">Share an idea</h2>
+          <button id="feedbackClose" class="dialog-close" type="button" aria-label="Close feedback form" title="Close">&times;</button>
+        </div>
+        <p id="feedbackContext" class="feedback-context" hidden></p>
+        <label for="feedbackCategory">What is this about?</label>
+        <select id="feedbackCategory" name="category" required></select>
+        <label for="feedbackComment">Your note <span id="feedbackOptional" hidden>(optional)</span></label>
+        <textarea id="feedbackComment" name="comment" rows="5" maxlength="2000"></textarea>
+        <label id="feedbackQuestionOption" class="checkbox-label" hidden>
+          <input id="feedbackIncludeQuestion" type="checkbox">
+          Include my question with this report
+        </label>
+        <p id="feedbackError" class="feedback-error" role="alert" hidden></p>
+        <div class="feedback-actions">
+          <button id="feedbackCancel" class="feedback-cancel" type="button">Cancel</button>
+          <button id="feedbackSubmit" class="feedback-submit" type="submit">Send feedback</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="feedbackNotice" class="feedback-notice" role="status" hidden></div>
     <script src="/app.js" type="module"></script>
   </body>
 </html>

@@ -302,9 +302,6 @@ function createSourceGroup(sources, messageId) {
     const numberEl = document.createElement("span");
     numberEl.className = "source-number";
     numberEl.textContent = String(number);
-    const type = document.createElement("span");
-    type.className = "source-type";
-    type.textContent = source.type === "book" ? "Book" : "Podcast";
     const sourceDetails = document.createElement("div");
     sourceDetails.className = "source-details";
     if (source.type === "book" && source.workTitle) {
@@ -324,7 +321,7 @@ function createSourceGroup(sources, messageId) {
       title.rel = "noreferrer";
     }
     sourceDetails.append(title);
-    item.append(numberEl, type, sourceDetails);
+    item.append(numberEl, sourceDetails);
 
     if (url) {
       const share = document.createElement("button");

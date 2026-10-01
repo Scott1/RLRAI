@@ -4,7 +4,11 @@ export const BOOK_DISPLAY_NAME = "Real Love Ready: A Guide to Relational Literac
 export const BOOK_URL = "https://www.realloveready.com/book";
 
 export function sourceDisplayName(metadata: SourceMetadata): string {
-  const prefix = metadata.type === "book" ? BOOK_DISPLAY_NAME : "Let's Talk Love";
+  const prefix = metadata.type === "book"
+    ? BOOK_DISPLAY_NAME
+    : metadata.type === "podcast"
+      ? metadata.series ?? "Let's Talk Love"
+      : metadata.publication ?? "Real Love Ready article";
   const dated = metadata.date ? `${metadata.title} (${metadata.date})` : metadata.title;
   return `${prefix} - ${dated}`;
 }

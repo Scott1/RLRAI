@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildCitations, citedSources, formatSourcesList, trimExcerpt } from "./citations";
+import { buildCitations, citedSources, formatSourcesList, sourceDisplayName, trimExcerpt } from "./citations";
 import type { RetrievalResult } from "./types";
 
 const result: RetrievalResult = {
@@ -28,6 +28,16 @@ test("deduplicates citations by source document", () => {
 test("formats source list for humans", () => {
   const list = formatSourcesList(buildCitations([result]));
   assert.match(list, /\[S1\] Real Love Ready: A Guide to Relational Literacy by Robin Ducharme - Demo Chapter/);
+});
+
+test("names podcast series and article publications without changing legacy podcast labels", () => {
+  const metadata = { ...result.metadata, type: "podcast" as const, title: "Episode title" };
+  assert.equal(sourceDisplayName(metadata), "Let's Talk Love - Episode title");
+  assert.equal(sourceDisplayName({ ...metadata, series: "Real Love Ready: The Series" }),
+    "Real Love Ready: The Series - Episode title");
+  assert.equal(sourceDisplayName({ ...metadata, type: "article", publication: "Real Love Ready on Substack" }),
+    "Real Love Ready on Substack - Episode title");
+  assert.equal(sourceDisplayName({ ...metadata, type: "article" }), "Real Love Ready article - Episode title");
 });
 
 test("returns only cited sources in their first mention order", () => {

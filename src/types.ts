@@ -1,4 +1,4 @@
-export type SourceType = "book" | "podcast";
+export type SourceType = "book" | "podcast" | "article";
 
 export type Canonicality = "primary" | "secondary" | "peer";
 
@@ -11,6 +11,9 @@ export interface SourceMetadata {
   source_url?: string;
   podcast_page_url?: string;
   transcript_url?: string;
+  series?: string;
+  publication?: string;
+  author?: string;
   participants?: string[];
   date?: string;
   [key: string]: unknown;

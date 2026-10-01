@@ -304,7 +304,7 @@ function createSourceGroup(sources, messageId) {
     numberEl.textContent = String(number);
     const sourceDetails = document.createElement("div");
     sourceDetails.className = "source-details";
-    if (source.type === "book" && source.workTitle) {
+    if (source.workTitle) {
       const work = document.createElement("div");
       work.className = "source-work";
       work.textContent = source.workTitle;

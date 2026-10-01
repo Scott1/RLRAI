@@ -67,6 +67,9 @@ export function buildRetrievalContext(results: RetrievalResult[]): { context: st
       `[${key}]`,
       `Title: ${metadata.title}`,
       `Type: ${metadata.type}`,
+      ...(metadata.series ? [`Series: ${metadata.series}`] : []),
+      ...(metadata.publication ? [`Publication: ${metadata.publication}`] : []),
+      ...(metadata.author ? [`Author: ${metadata.author}`] : []),
       `Canonicality: ${metadata.canonicality}`,
       `Source URL: ${metadata.source_url ?? "n/a"}`,
       `Score: ${score}`,
@@ -102,7 +105,7 @@ function mapSearchResult(result: RawSearchResult, index: number, vectorStoreId: 
 }
 
 function metadataFromAttributes(attributes: Record<string, unknown>): SourceMetadata {
-  const type = attributes.type === "podcast" ? "podcast" : "book";
+  const type = attributes.type === "podcast" ? "podcast" : attributes.type === "article" ? "article" : "book";
   const canonicality = stringAttribute(attributes.canonicality, "peer") as SourceMetadata["canonicality"];
   const participants = typeof attributes.participants === "string" && attributes.participants.length > 0
     ? attributes.participants.split(",").map((participant) => participant.trim()).filter(Boolean)
@@ -119,7 +122,10 @@ function metadataFromAttributes(attributes: Record<string, unknown>): SourceMeta
       ? optionalStringAttribute(attributes.podcast_page_url)
         ?? optionalStringAttribute(attributes.source_url)
         ?? optionalStringAttribute(attributes.transcript_url)
-      : BOOK_URL,
+      : type === "book" ? BOOK_URL : optionalStringAttribute(attributes.source_url),
+    series: optionalStringAttribute(attributes.series),
+    publication: optionalStringAttribute(attributes.publication),
+    author: optionalStringAttribute(attributes.author),
     participants,
     date: optionalStringAttribute(attributes.date)
   };

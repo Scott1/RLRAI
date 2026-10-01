@@ -1,6 +1,6 @@
 # Real Love Ready AI Companion v0.1
 
-This repository is a small proof-of-concept for an AI companion grounded in approved Real Love Ready material. It includes a local browser UI and is being prepared for a small, access-controlled feedback preview. It does not yet include authentication, billing, voice, persistent user memory, agents, fine-tuning, browser access, database storage, or a public production deployment.
+This repository is a proof-of-concept for an AI companion grounded in approved Real Love Ready material. It includes a browser UI, password-based preview accounts, and persistent feedback storage with an admin review dashboard. An access-controlled team preview is hosted on Railway. It does not yet include public signup, billing, voice, persistent saved conversations, fine-tuning, or web browsing.
 
 The core product question for v0.1 is simple: can a companion grounded in the Real Love Ready body of work produce conversations useful enough that readers and the RLR team want to keep using it?
 
@@ -17,12 +17,12 @@ Frontier LLM via Responses API
         |
 RLR system rules
         |
-CLI response + citations
+Browser / CLI response + citations
 ```
 
 The app uses retrieval-augmented generation instead of fine-tuning because v0.1 needs source-grounded answers, inspectable citations, easy content updates, and a clear refusal path when the approved corpus does not support an answer. Fine-tuning would not give reliable source attribution and would make content updates slower.
 
-Approved book and podcast material are treated as equal source material for the companion. The app should not automatically prefer the book over podcast transcripts.
+Approved book, podcast, and article material are treated as equal source material for the companion. The app should not automatically prefer one medium over another.
 
 ## What Is Included
 
@@ -88,16 +88,25 @@ rlr-ai-companion-corpus/
 ├── content/
 │   ├── raw/
 │   │   ├── book/
-│   │   └── podcasts/
+│   │   ├── podcasts/
+│   │   ├── real-love-ready-series/
+│   │   └── substack/
 │   ├── processed/
 │   │   ├── book/
-│   │   └── podcasts/
+│   │   ├── podcasts/
+│   │   ├── real-love-ready-series/
+│   │   └── substack/
 │   └── openai_upload/
 │       ├── book/
-│       └── podcasts/
+│       ├── podcasts/
+│       ├── real-love-ready-series-assemblyai/
+│       └── substack-cleaned/
 └── manifests/
     ├── book-openai_file_attributes.jsonl
-    └── podcasts-openai_file_attributes.jsonl
+    ├── podcasts-openai_file_attributes.jsonl
+    ├── series-assemblyai-openai_approved.jsonl
+    ├── substack-cleaned-openai_approved.jsonl
+    └── replacement-vector-store_approved.jsonl
 ```
 
 The `raw` folders preserve untouched source material. The `processed` folders preserve cleaned/auditable Markdown, including YAML front matter when helpful. The `openai_upload` folders should contain the plain Markdown sent to OpenAI, with metadata attached from JSONL manifest attributes instead of embedded into the retrieval text.
@@ -117,9 +126,50 @@ Then run:
 npm run ingest
 ```
 
-When `RLR_UPLOAD_MANIFESTS` is set, ingestion uploads the manifest's `content/openai_upload/...` Markdown files and attaches the manifest's OpenAI vector-store file attributes. This avoids putting YAML audit front matter into retrieval text.
+When `RLR_UPLOAD_MANIFESTS` is set, ingestion uploads the manifest's `content/openai_upload/...` Markdown files and attaches their attributes. The app computes `content_sha256` from the exact uploaded Markdown bytes. To stay within OpenAI's 16-attribute limit, it omits `source_filename` from book uploads and `episode_id` from podcast uploads; both remain in the private manifests. This avoids putting YAML audit front matter into retrieval text.
 
 The ingestion command refuses any manifest record where `rights_status` is not exactly `approved`.
+
+The team-review collection contains 200 documents: 20 book chapters, 125 Let's Talk Love transcripts, 22 Real Love Ready: The Series transcripts, and 33 Substack articles. RLR authorized use of the new sources; manual quality review and speaker verification remain pending. The private corpus preserves this distinction in its approval and review records.
+
+Use approved manifests only. Historical candidate manifests deliberately retain `rights_status=review_required` and ingestion refuses them. Do not combine overlapping individual and combined manifests. `replacement-vector-store_approved.jsonl` selects the entire collection; `new-source-upload_approved.jsonl` selects only the 55 additions. `npm run ingest` creates a new store from all manifests supplied; it does not append to the existing store.
+
+To package the newer cleaned AssemblyAI Series transcripts and existing Substack
+articles without making API calls:
+
+```text
+npx tsx scripts/prepareNewSourceUploads.ts --corpus-root ../rlr-ai-companion-corpus
+```
+
+This stages plain Markdown, hashes, a per-source review audit and candidate
+manifests under `.rlr/new-source-uploads`. Add `--write-corpus` to save the same
+bundle in the private corpus; differing existing files are never overwritten.
+Series packaging preserves reviewed speaker turns (including Lori's audience Q&A)
+and removes audit notices/front matter/timestamps from the retrieval text. Article
+packaging removes only known standalone subscription prompts. Raw and processed
+sources, earlier candidates and review flags remain intact.
+
+Use `manifests/new-source-upload_candidates.jsonl` for the new content only, or
+`manifests/replacement-vector-store_candidates.jsonl` for the existing book and
+Let's Talk Love sources plus the additions. Do not combine these with each other,
+their individual Series/Substack manifests, or the older Drive-derived Series
+manifest. The package README, `NEW-SOURCE-UPLOAD-README.md`, describes the review
+gate. New records remain unapproved and ingestion refuses them until a separate,
+explicitly approved selection is created. Packaging never switches the local or
+Railway vector store.
+
+After explicit RLR source-use approval, preserve the candidate snapshot and make
+approved upload selections with:
+
+```text
+npx tsx scripts/approveNewSourceUploads.ts --confirm-rights --write-corpus --corpus-root ../rlr-ai-companion-corpus
+```
+
+This changes only `rights_status` in separate `*_approved.jsonl` manifests; pending
+manual-review and speaker-verification flags remain. The confirmation is recorded
+in `manifests/new-source-rights-approval.json`. Use `new-source-upload_approved.jsonl`
+with the incremental sync workflow below to add just the new sources to the existing
+store, or intentionally select `replacement-vector-store_approved.jsonl` for a rebuild.
 
 ## Ingest Content
 
@@ -161,6 +211,26 @@ npm run update:podcast-links -- --manifest ../rlr-ai-companion-corpus/manifests/
 
 Add `--apply` to update the 125 podcast file attributes in place. The command matches uploaded filenames, saves the previous attributes under `.rlr/`, and verifies the result. It does not re-upload files or create a new vector store. The private corpus upload manifest carries the same episode-page URLs for future ingests, with `source_url` retained for deployed app compatibility. Sources without an episode page link to their transcript instead.
 
+This is a one-time updater for the original 145-file store, not for stores rebuilt with `content_sha256`. New stores already receive the podcast links from the upload manifest.
+
+## Sync Individual Sources
+
+Use `sync:content` when an approved transcript or article changes and you want to update an existing vector store without rebuilding all of it. For files uploaded with `content_sha256`, it compares the local file's SHA-256 hash directly with the stored attribute. Older attachments without that attribute fall back to comparing OpenAI's parsed text, which is not a downloadable copy of the original file; review any proposed replacement. The first run is a read-only preview; it does not upload or remove anything. The target store ID is always explicit:
+
+```bash
+npm run sync:content -- --store vs_... --manifest ../rlr-ai-companion-corpus/manifests/approved-updates.jsonl
+```
+
+The preview prints an add / replace / metadata-only / remove plan and a plan hash. After reviewing it, repeat the same command with `--apply --plan HASH`. A different plan hash refuses the apply. Only sources in the selected approved manifest are added or changed; omission never deletes a source. Removal must name a source ID explicitly, for example:
+
+```bash
+npm run sync:content -- --store vs_... --remove rlr-series-example
+```
+
+`--remove` without `--manifest` previews only removals. Use both options to combine removals with additions or replacements. If no manifest or removal is specified, the command previews the manifests from `RLR_UPLOAD_MANIFESTS`. Candidate manifests marked `review_required` are rejected before any OpenAI request.
+
+For replacement, the command indexes the new file first, then detaches the old one; for metadata-only changes it updates attributes without re-uploading text. This can briefly expose both versions to live retrieval, and OpenAI notes that removal is eventually consistent. The command backs up matching local store state and writes an audit trail to ignored `.rlr/content-sync.jsonl`. It does not globally delete the old uploaded OpenAI File, which could be attached to another store. If an apply stops partway through, inspect the audit trail and store before retrying. Syncing a store used by Railway affects that deployment without a code deploy; use a separate review store or a full rebuild-and-switch for larger changes.
+
 ## Chat
 
 ```bash
@@ -183,7 +253,7 @@ http://localhost:3000
 
 The web UI runs locally and uses the same retrieval, system prompt, safety checks, and answer generation path as the CLI. Conversation history is kept in memory by the local server and can be reset from the page.
 
-Inline source numbers open the matching item below each answer. The list contains only sources cited in that answer, in the order first mentioned. Book sources link to the [Real Love Ready book page](https://www.realloveready.com/book); podcast sources use their episode page when available. The **Share** action on a source row copies its link.
+Inline source numbers open the matching item below each answer. The list contains only sources cited in that answer, in the order first mentioned. Book sources link to the [Real Love Ready book page](https://www.realloveready.com/book); podcast sources use their episode page when available; article sources link to their public post. The **Share** action on a source row copies its link.
 
 Reviewers can use **Share an idea** in the menu or **Report this response** beside an answer. Local feedback is saved to the ignored `.rlr/feedback.jsonl` file. A report saves that answer and its cited sources; the user's question is included only if they check the option. Other conversation turns are not saved. The private `/admin` dashboard shows submissions and lets the administrator track review status, notes, and eval candidates.
 
@@ -258,4 +328,16 @@ npm run lint
 npm test
 ```
 
-The API-backed commands require `OPENAI_API_KEY` and either a saved or configured vector store ID.
+The OpenAI-backed commands require `OPENAI_API_KEY` and either a saved or configured vector store ID.
+
+## AssemblyAI Transcription Pilot
+
+The optional original-audio comparison is separate from chat and vector-store ingestion.
+Add `ASSEMBLYAI_API_KEY` to your local `.env`, then preview with
+`npm run transcribe:assemblyai`. No API calls are made without `--run`.
+See [pilot instructions](scripts/ASSEMBLYAI-PILOT.md) for running, resuming and reviewing results.
+
+The same instructions cover the resumable full-series batch (`transcribe:series`),
+published episode discovery, original-audio preservation, reuse of completed pilot
+jobs, and review-draft archival into the separate private corpus repo. These
+commands do not change the Companion's active vector store.

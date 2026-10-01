@@ -14,16 +14,16 @@
     </header>
     <main>
       <div class="page-heading">
-        <div><p class="eyebrow">Companion feedback</p><h1>Review dashboard</h1><p class="subheading">Ideas and reported responses from the preview.</p></div>
+        <div><p class="eyebrow">Companion feedback</p><h1>Review dashboard</h1><p class="subheading">Ideas and response feedback from the preview.</p></div>
         <a class="export-button" href="/api/admin/eval-cases" download>Export curated evals</a>
       </div>
       <p id="pageStatus" class="page-status" role="status" aria-live="polite">Loading feedback...</p>
-      <div class="metrics" aria-label="Feedback totals"><div><strong id="totalCount">0</strong><span>Total</span></div><div><strong id="newCount">0</strong><span>New</span></div><div><strong id="reportCount">0</strong><span>Reports</span></div><div><strong id="evalCount">0</strong><span>Curated evals</span></div></div>
+      <div class="metrics" aria-label="Feedback totals"><div><strong id="totalCount">0</strong><span>Total</span></div><div><strong id="newCount">0</strong><span>New</span></div><div><strong id="reportCount">0</strong><span>Responses</span></div><div><strong id="evalCount">0</strong><span>Curated evals</span></div></div>
       <div class="workspace">
         <section class="inbox" aria-label="Feedback list">
           <div class="filters">
             <label for="searchInput">Search</label><input id="searchInput" type="search" placeholder="Search feedback">
-            <div class="filter-pair"><div><label for="kindFilter">Type</label><select id="kindFilter"><option value="all">All types</option><option value="report">Reports</option><option value="idea">Ideas</option></select></div><div><label for="statusFilter">Status</label><select id="statusFilter"><option value="all">All statuses</option><option value="new">New</option><option value="in_review">In review</option><option value="resolved">Resolved</option></select></div></div>
+            <div class="filter-pair"><div><label for="kindFilter">Type</label><select id="kindFilter"><option value="all">All types</option><option value="report">Response feedback</option><option value="good_response">Good responses</option><option value="idea">Ideas</option></select></div><div><label for="statusFilter">Status</label><select id="statusFilter"><option value="all">All statuses</option><option value="new">New</option><option value="in_review">In review</option><option value="resolved">Resolved</option></select></div></div>
           </div>
           <p id="listCount" class="list-count"></p>
           <div id="feedbackList" class="feedback-list"></div>
@@ -31,7 +31,7 @@
         <section class="detail" aria-label="Selected feedback"><div id="emptyDetail" class="empty-detail">Select an item to review.</div><div id="detailContent" hidden>
           <div class="detail-heading"><div><span id="detailKind" class="detail-kind"></span><h2 id="detailTitle"></h2><p id="detailMeta" class="detail-meta"></p></div><span id="detailStatus" class="status-tag"></span></div>
           <div class="submission"><h3>Feedback</h3><p id="detailComment" class="preserve-lines"></p></div>
-          <div id="responseSection" class="submission" hidden><h3>Reported answer</h3><p id="detailQuestion" class="question preserve-lines" hidden></p><p id="detailResponse" class="preserve-lines"></p><div id="detailSources"></div></div>
+          <div id="responseSection" class="submission" hidden><h3>Answer</h3><p id="detailQuestion" class="question preserve-lines" hidden></p><p id="detailResponse" class="preserve-lines"></p><div id="detailSources"></div></div>
           <form id="reviewForm" class="review-form"><h3>Review</h3><div class="review-grid"><div><label for="reviewStatus">Status</label><select id="reviewStatus"><option value="new">New</option><option value="in_review">In review</option><option value="resolved">Resolved</option></select></div><div class="checkbox-wrap"><label><input id="evalCandidate" type="checkbox"> Mark as eval candidate</label></div></div><label for="adminNote">Private notes</label><textarea id="adminNote" rows="3" maxlength="4000" placeholder="Decision, follow-up, or context"></textarea><div class="eval-fields"><p class="field-help">For eval export, write a new test case without private conversation details.</p><label for="evalQuestion">Sanitized test question</label><textarea id="evalQuestion" rows="2" maxlength="2000"></textarea><label for="requirements">Expected behavior (one point per line)</label><textarea id="requirements" rows="3" maxlength="2000"></textarea></div><div class="form-footer"><span id="reviewMessage" role="status" aria-live="polite"></span><button id="saveReview" type="submit">Save review</button></div></form>
         </div></section>
       </div>

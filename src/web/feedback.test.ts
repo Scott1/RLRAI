@@ -26,6 +26,40 @@ test("accepts a response report without requiring a written note", () => {
   });
 });
 
+test("accepts positive response feedback with optional notes and opt-in question sharing", () => {
+  const responseId = "759d2848-bef3-4a72-a23e-e1741017c369";
+  const submission = parseFeedbackSubmission({ kind: "report", category: "good_response", comment: "", responseId });
+  assert.equal(submission.category, "good_response");
+  assert.equal(submission.includeQuestion, false);
+  assert.equal(submission.responseId, responseId);
+  assert.throws(() => parseFeedbackSubmission({ kind: "idea", category: "good_response", comment: "Helpful" }));
+  assert.throws(() => parseFeedbackSubmission({ kind: "report", category: "good_response", comment: "" }));
+});
+
+test("positive examples persist and require curation before privacy-safe eval export", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "rlr-positive-feedback-test-"));
+  const filePath = path.join(directory, "feedback.jsonl");
+  const id = "759d2848-bef3-4a72-a23e-e1741017c369";
+  try {
+    await appendFeedback(filePath, { id, createdAt: "2026-10-01T00:00:00.000Z", username: "reviewer",
+      kind: "report", category: "good_response", comment: "Helpful source explanation", response: "Private answer" });
+    assert.deepEqual(buildEvalCases(await listFeedback(filePath)), []);
+    await saveFeedbackReview(filePath, id, "scott", { status: "in_review", evalCandidate: true,
+      adminNote: "Check citations", evalQuestion: "", requirements: "" });
+    assert.deepEqual(buildEvalCases(await listFeedback(filePath)), []);
+    await saveFeedbackReview(filePath, id, "scott", { status: "resolved", evalCandidate: true,
+      adminNote: "Verified", evalQuestion: "How does RLR describe boundaries?", requirements: "Explains the cited teaching\nAvoids prescribing a decision" });
+    const records = await listFeedback(filePath);
+    assert.equal(records[0]?.category, "good_response");
+    assert.equal(records[0]?.question, undefined);
+    assert.deepEqual(buildEvalCases(records), [{ id: `feedback-${id}`, category: "good_response",
+      question: "How does RLR describe boundaries?", requirements: ["Explains the cited teaching", "Avoids prescribing a decision"] }]);
+    assert.equal(JSON.stringify(buildEvalCases(records)).includes("Private answer"), false);
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("rejects unknown categories, blank ideas, and oversized comments", () => {
   assert.throws(() => parseFeedbackSubmission({ kind: "report", category: "anything", comment: "", responseId: "759d2848-bef3-4a72-a23e-e1741017c369" }));
   assert.throws(() => parseFeedbackSubmission({ kind: "idea", category: "general_idea", comment: " " }));

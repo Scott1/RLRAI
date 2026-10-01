@@ -261,7 +261,7 @@ function appendMessage(role, label, text, sources = [], details = {}) {
       const report = document.createElement("button");
       report.className = "report-button";
       report.type = "button";
-      report.textContent = "Report this response";
+      report.textContent = "Rate this response";
       report.hidden = !feedbackEnabled;
       report.addEventListener("click", () => openFeedback("report", details.responseId));
       actions.append(report);
@@ -488,15 +488,15 @@ function openFeedback(kind, responseId) {
   feedbackCategory.replaceChildren();
   const choices = kind === "idea"
     ? [["feature_request", "Feature request"], ["general_idea", "General idea"], ["other_feedback", "Other feedback"]]
-    : [["inaccurate_source", "Inaccurate source"], ["overconfident_advice", "Overconfident advice"], ["safety_concern", "Safety concern"], ["not_rlr", "Doesn't feel like RLR"], ["other", "Something else"]];
+    : [["good_response", "Good response"], ["inaccurate_source", "Inaccurate source"], ["overconfident_advice", "Overconfident advice"], ["safety_concern", "Safety concern"], ["not_rlr", "Doesn't feel like RLR"], ["other", "Something else"]];
   const placeholder = new globalThis.Option("Choose one", "", true, true);
   placeholder.disabled = true;
   feedbackCategory.add(placeholder);
   for (const [value, label] of choices) {
     feedbackCategory.add(new globalThis.Option(label, value));
   }
-  feedbackTitle.textContent = kind === "idea" ? "Share an idea" : "Report this response";
-  feedbackContext.textContent = "This report includes this answer and its source references. Your question is only included if you choose the option below.";
+  feedbackTitle.textContent = kind === "idea" ? "Share an idea" : "Rate this response";
+  feedbackContext.textContent = "This feedback includes this answer and its source references. Your question is only included if you choose the option below.";
   feedbackContext.hidden = kind !== "report";
   feedbackQuestionOption.hidden = kind !== "report";
   feedbackOptional.hidden = kind !== "report";

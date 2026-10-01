@@ -1,6 +1,6 @@
 const state = { feedback: [], selectedId: null };
 const byId = (id) => document.getElementById(id);
-const labels = { feature_request: "Feature request", general_idea: "General idea", other_feedback: "Other feedback", inaccurate_source: "Inaccurate source", overconfident_advice: "Overconfident advice", safety_concern: "Safety concern", not_rlr: "Doesn't feel like RLR", other: "Other" };
+const labels = { feature_request: "Feature request", general_idea: "General idea", other_feedback: "Other feedback", good_response: "Good response", inaccurate_source: "Inaccurate source", overconfident_advice: "Overconfident advice", safety_concern: "Safety concern", not_rlr: "Doesn't feel like RLR", other: "Other" };
 const statuses = { new: "New", in_review: "In review", resolved: "Resolved" };
 
 byId("searchInput").addEventListener("input", renderList);
@@ -36,7 +36,7 @@ function renderList() {
   const query = byId("searchInput").value.trim().toLowerCase();
   const kind = byId("kindFilter").value;
   const status = byId("statusFilter").value;
-  const shown = state.feedback.filter((item) => (kind === "all" || item.kind === kind) && (status === "all" || item.review.status === status) && (!query || [item.comment, item.username, item.category, item.question].filter(Boolean).join(" ").toLowerCase().includes(query)));
+  const shown = state.feedback.filter((item) => (kind === "all" || item.kind === kind || (kind === "good_response" && item.kind === "report" && item.category === "good_response")) && (status === "all" || item.review.status === status) && (!query || [item.comment, item.username, labels[item.category], item.category, item.question].filter(Boolean).join(" ").toLowerCase().includes(query)));
   byId("listCount").textContent = `${shown.length} ${shown.length === 1 ? "item" : "items"}`;
   const list = byId("feedbackList");
   list.replaceChildren();
@@ -49,7 +49,7 @@ function renderList() {
     const top = document.createElement("span");
     top.className = "row-top";
     const type = document.createElement("span");
-    type.textContent = item.kind === "report" ? "Report" : "Idea";
+    type.textContent = item.kind === "report" ? "Response feedback" : "Idea";
     const date = document.createElement("time");
     date.dateTime = item.createdAt;
     date.textContent = formatDate(item.createdAt);
@@ -73,7 +73,7 @@ function renderDetail() {
   byId("emptyDetail").hidden = Boolean(item);
   byId("detailContent").hidden = !item;
   if (!item) return;
-  byId("detailKind").textContent = item.kind === "report" ? "Reported response" : "Shared idea";
+  byId("detailKind").textContent = item.kind === "report" ? "Response feedback" : "Shared idea";
   byId("detailTitle").textContent = labels[item.category] || item.category;
   byId("detailMeta").textContent = `${item.username} · ${formatDateTime(item.createdAt)}${item.model ? ` · ${item.model}` : ""}`;
   byId("detailStatus").textContent = statuses[item.review.status] || "New";

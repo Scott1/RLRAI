@@ -48,7 +48,7 @@ export interface ReviewSubmission {
 
 const categories: Record<FeedbackKind, Set<string>> = {
   idea: new Set(["feature_request", "general_idea", "other_feedback"]),
-  report: new Set(["inaccurate_source", "overconfident_advice", "safety_concern", "not_rlr", "other"])
+  report: new Set(["good_response", "inaccurate_source", "overconfident_advice", "safety_concern", "not_rlr", "other"])
 };
 
 export function parseFeedbackSubmission(value: unknown): FeedbackSubmission {

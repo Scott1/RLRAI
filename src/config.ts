@@ -9,6 +9,7 @@ export interface VectorStoreState {
   documentCount: number;
   bookCount: number;
   podcastCount: number;
+  articleCount?: number;
   files: Array<{
     id: string;
     title: string;

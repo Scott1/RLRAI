@@ -17,8 +17,8 @@ export function validateMetadata(metadata: Partial<SourceMetadata>, filePath = "
     }
   }
 
-  if (metadata.type && metadata.type !== "book" && metadata.type !== "podcast") {
-    issues.push({ filePath, message: "Metadata field type must be either book or podcast" });
+  if (metadata.type && metadata.type !== "book" && metadata.type !== "podcast" && metadata.type !== "article") {
+    issues.push({ filePath, message: "Metadata field type must be book, podcast, or article" });
   }
 
   if (

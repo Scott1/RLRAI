@@ -1,10 +1,13 @@
-import fs from "node:fs";
+import fsp from "node:fs/promises";
+import path from "node:path";
+import { toFile } from "openai";
 import { getConfig, writeVectorStoreState } from "../config";
 import { createOpenAIClient } from "../openai";
 import type { SourceDocument } from "../types";
 import { loadManifestUploadDocuments, type ManifestUploadDocument } from "./manifest";
 import { metadataToAttributes } from "./metadata";
 import { loadApprovedDocuments } from "./validate";
+import { uploadAttributes } from "./uploadAttributes";
 
 async function main(): Promise<void> {
   const config = getConfig();
@@ -20,8 +23,9 @@ async function main(): Promise<void> {
 
   const bookCount = documents.filter((document) => typeForDocument(document) === "book").length;
   const podcastCount = documents.filter((document) => typeForDocument(document) === "podcast").length;
+  const articleCount = documents.filter((document) => typeForDocument(document) === "article").length;
 
-  console.log(`Found ${documents.length} approved documents (${bookCount} book, ${podcastCount} podcast).`);
+  console.log(`Found ${documents.length} approved documents (${bookCount} book chapters, ${podcastCount} podcast transcripts, ${articleCount} articles).`);
   console.log("Creating OpenAI vector store...");
 
   const client = createOpenAIClient(config.apiKey);
@@ -43,9 +47,11 @@ async function main(): Promise<void> {
   for (const [index, document] of documents.entries()) {
     const progress = `${index + 1}/${documents.length}`;
     console.log(`Uploading ${progress}: ${titleForDocument(document)}`);
+    const bytes = await fsp.readFile(document.path);
+    const attributes = uploadAttributes(attributesForDocument(document), bytes);
 
     const file = await client.files.create({
-      file: fs.createReadStream(document.path),
+      file: await toFile(bytes, "uploadFilename" in document ? document.uploadFilename : path.basename(document.path)),
       purpose: "assistants"
     });
 
@@ -53,7 +59,7 @@ async function main(): Promise<void> {
 
     await client.vectorStores.files.createAndPoll(vectorStore.id, {
       file_id: file.id,
-      attributes: attributesForDocument(document)
+      attributes
     });
 
     uploadedFiles.push({
@@ -72,6 +78,7 @@ async function main(): Promise<void> {
     documentCount: documents.length,
     bookCount,
     podcastCount,
+    articleCount,
     files: uploadedFiles
   });
 
@@ -80,6 +87,7 @@ async function main(): Promise<void> {
   console.log("");
   console.log(`Book chapters: ${bookCount}`);
   console.log(`Podcast transcripts: ${podcastCount}`);
+  console.log(`Articles: ${articleCount}`);
   console.log(`Documents uploaded: ${documents.length}`);
   console.log(`Vector store: ${vectorStore.id}`);
   console.log(`State saved: ${config.statePath}`);

@@ -79,6 +79,9 @@ export function metadataToAttributes(metadata: SourceMetadata, relativePath: str
     canonicality: metadata.canonicality ?? "peer",
     rights_status: metadata.rights_status,
     source_url: truncateAttribute(metadata.source_url ?? ""),
+    series: truncateAttribute(metadata.series ?? ""),
+    publication: truncateAttribute(metadata.publication ?? ""),
+    author: truncateAttribute(metadata.author ?? ""),
     participants: truncateAttribute(metadata.participants?.join(", ") ?? ""),
     date: metadata.date ?? "",
     source_path: truncateAttribute(relativePath)
@@ -94,6 +97,9 @@ function normalizeMetadata(input: MetadataInput): Partial<SourceMetadata> & Reco
     canonicality: toOptionalString(input.canonicality) as Canonicality | undefined,
     rights_status: toOptionalString(input.rights_status) as "approved" | undefined,
     source_url: toOptionalString(input.source_url),
+    series: toOptionalString(input.series),
+    publication: toOptionalString(input.publication),
+    author: toOptionalString(input.author),
     participants: normalizeParticipants(input.participants),
     date: normalizeDate(input.date)
   };

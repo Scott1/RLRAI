@@ -1,8 +1,8 @@
-# Real Love Ready AI Companion v0.1
+# Real Love Ready Compass v0.1
 
-This repository is a proof-of-concept for an AI companion grounded in approved Real Love Ready material. It includes a browser UI, password-based preview accounts, and persistent feedback storage with an admin review dashboard. An access-controlled team preview is hosted on Railway. It does not yet include public signup, billing, voice, persistent saved conversations, fine-tuning, or web browsing.
+This repository is a proof-of-concept for an AI Compass grounded in approved Real Love Ready material. It includes a browser UI, password-based preview accounts, and persistent feedback storage with an admin review dashboard. An access-controlled team preview is hosted on Railway. It does not yet include public signup, billing, voice, persistent saved conversations, fine-tuning, or web browsing.
 
-The core product question for v0.1 is simple: can a companion grounded in the Real Love Ready body of work produce conversations useful enough that readers and the RLR team want to keep using it?
+The core product question for v0.1 is simple: can a Compass grounded in the Real Love Ready body of work produce conversations useful enough that readers and the RLR team want to keep using it?
 
 ## Architecture
 
@@ -22,7 +22,7 @@ Browser / CLI response + citations
 
 The app uses retrieval-augmented generation instead of fine-tuning because v0.1 needs source-grounded answers, inspectable citations, easy content updates, and a clear refusal path when the approved corpus does not support an answer. Fine-tuning would not give reliable source attribution and would make content updates slower.
 
-Approved book, podcast, and article material are treated as equal source material for the companion. The app should not automatically prefer one medium over another.
+Approved book, podcast, and article material are treated as equal source material for the Compass. The app should not automatically prefer one medium over another.
 
 ## What Is Included
 
@@ -360,4 +360,4 @@ See [pilot instructions](scripts/ASSEMBLYAI-PILOT.md) for running, resuming and 
 The same instructions cover the resumable full-series batch (`transcribe:series`),
 published episode discovery, original-audio preservation, reuse of completed pilot
 jobs, and review-draft archival into the separate private corpus repo. These
-commands do not change the Companion's active vector store.
+commands do not change the Compass's active vector store.

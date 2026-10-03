@@ -89,7 +89,7 @@ const server = http.createServer(async (request, response) => {
       if (url.pathname.startsWith("/api/")) {
         sendJson(response, 403, { error: "Admin access is required." });
       } else {
-        sendHtml(response, 403, page("Admin access required", "This page is available only to the preview administrator.", "Return to companion", "/"));
+        sendHtml(response, 403, page("Admin access required", "This page is available only to the preview administrator.", "Return to Compass", "/"));
       }
       return;
     }
@@ -170,12 +170,12 @@ const server = http.createServer(async (request, response) => {
         console.error(error.stack);
       }
     }
-    sendJson(response, httpError?.status ?? 500, { error: httpError?.message ?? "The companion could not complete that request." });
+    sendJson(response, httpError?.status ?? 500, { error: httpError?.message ?? "Compass could not complete that request." });
   }
 });
 
 server.listen(port, host, () => {
-  console.log(`Real Love Ready Companion web UI running at http://${host}:${port}`);
+  console.log(`Real Love Ready Compass web UI running at http://${host}:${port}`);
 });
 
 async function handlePasswordLogin(request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
@@ -437,16 +437,16 @@ function sendJson(response: http.ServerResponse, status: number, body: unknown, 
 
 function loginPage(message?: string): string {
   if (authConfig.mode === "off") {
-    return page("Preview access is not enabled", "This local companion does not require a sign-in.", "Open companion", "/");
+    return page("Preview access is not enabled", "This local Compass does not require a sign-in.", "Open Compass", "/");
   }
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in | Real Love Ready Companion</title><style>${authStyles()}</style></head>
-<body><main><p class="eyebrow">Real Love Ready</p><h1>Companion preview</h1><p class="intro">Sign in with the reviewer account you were given.</p>${message ? `<p class="form-message" role="alert">${message}</p>` : ""}<form method="post" action="/auth/login"><label for="username">Username</label><input id="username" name="username" autocomplete="username" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button type="submit">Sign in</button></form><p class="fine-print">This preview is for invited reviewers only.</p></main></body></html>`;
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in | Real Love Ready Compass</title><style>${authStyles()}</style></head>
+<body><main><p class="eyebrow">Real Love Ready</p><h1>Compass preview</h1><p class="intro">Sign in with the reviewer account you were given.</p>${message ? `<p class="form-message" role="alert">${message}</p>` : ""}<form method="post" action="/auth/login"><label for="username">Username</label><input id="username" name="username" autocomplete="username" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button type="submit">Sign in</button></form><p class="fine-print">This preview is for invited reviewers only.</p></main></body></html>`;
 }
 
 function page(title: string, body: string, action: string, href: string): string {
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title} | Real Love Ready Companion</title><style>${authStyles()}</style></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title} | Real Love Ready Compass</title><style>${authStyles()}</style></head>
 <body><main><p class="eyebrow">Real Love Ready</p><h1>${title}</h1><p class="intro">${body}</p><a class="button" href="${href}">${action}</a></main></body></html>`;
 }
 

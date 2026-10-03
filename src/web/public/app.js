@@ -139,13 +139,13 @@ async function sendQuestion(questionText) {
     });
     const payload = await response.json();
     if (!response.ok) {
-      throw new Error(payload.error || "The companion could not complete that response.");
+      throw new Error(payload.error || "Compass could not complete that response.");
     }
 
     sessionId = payload.sessionId;
     localStorage.setItem("rlr-session-id", sessionId);
     pending.remove();
-    appendMessage("assistant", "Real Love Ready Companion", payload.answer, payload.sources, payload);
+    appendMessage("assistant", "Real Love Ready Compass", payload.answer, payload.sources, payload);
     setBusy(false, "Ready to reflect");
   } catch (error) {
     pending.remove();
@@ -159,7 +159,7 @@ function appendWelcome() {
   article.className = "message assistant welcome-message";
   article.innerHTML = `
     <div class="message-heading">
-      <div class="message-label">Real Love Ready Companion</div>
+      <div class="message-label">Real Love Ready Compass</div>
       <span class="message-context">Grounded in the RLR library</span>
     </div>
     <p>What is feeling present in your relationships? We can make room to explore it together, with ideas from Real Love Ready material as a guide.</p>
@@ -183,8 +183,8 @@ function appendPendingMessage() {
   article.setAttribute("aria-label", "Preparing a response");
   article.innerHTML = `
     <div class="message-heading">
-      <div class="message-label">Real Love Ready Companion</div>
-      <span class="message-context">Looking through approved material</span>
+      <div class="message-label">Real Love Ready Compass</div>
+      <span class="message-context">Finding ideas from the RLR library</span>
     </div>
     <div class="thinking" aria-hidden="true"><span></span><span></span><span></span></div>`;
   messages.append(article);
@@ -543,6 +543,6 @@ async function loadStatus() {
   } catch {
     connectionStatus.classList.add("offline");
     connectionText.textContent = "Library connection unavailable";
-    modelDetail.textContent = "Check that the local companion server is running";
+    modelDetail.textContent = "Check that the local Compass server is running";
   }
 }

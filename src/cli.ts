@@ -11,9 +11,9 @@ async function main(): Promise<void> {
   const history: ChatMessage[] = [];
   const rl = readline.createInterface({ input, output });
 
-  console.log("Real Love Ready Companion v0.1");
+  console.log("Real Love Ready Compass v0.1");
   console.log("");
-  console.log("This is an AI educational and reflection companion");
+  console.log("Compass is an AI guide for education and reflection,");
   console.log("grounded in approved Real Love Ready material.");
   console.log("");
   console.log("It is not therapy, diagnosis, crisis care, or professional advice.");

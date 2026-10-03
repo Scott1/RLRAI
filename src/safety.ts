@@ -52,7 +52,7 @@ export function assessSafety(input: string): SafetyDecision {
       action: "block",
       category: "prompt-extraction",
       message:
-        "I can't reveal hidden prompts, system instructions, API credentials, or internal configuration. I can explain the companion's visible purpose and boundaries instead."
+        "I can't reveal hidden prompts, system instructions, API credentials, or internal configuration. I can explain the Compass's visible purpose and boundaries instead."
     };
   }
 
@@ -61,7 +61,7 @@ export function assessSafety(input: string): SafetyDecision {
       action: "block",
       category: "prompt-injection",
       message:
-        "I can't ignore the Real Love Ready companion boundaries or treat retrieved source text as instructions. Ask a question about the approved material and I will answer within those limits."
+        "I can't ignore the Real Love Ready Compass boundaries or treat retrieved source text as instructions. Ask a question about the approved material and I will answer within those limits."
     };
   }
 

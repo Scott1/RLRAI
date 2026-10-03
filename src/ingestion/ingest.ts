@@ -30,7 +30,7 @@ async function main(): Promise<void> {
 
   const client = createOpenAIClient(config.apiKey);
   const vectorStore = await client.vectorStores.create({
-    name: `Real Love Ready Companion v0.1 - ${new Date().toISOString()}`
+    name: `Real Love Ready Compass v0.1 - ${new Date().toISOString()}`
   });
 
   console.log(`Vector store created: ${vectorStore.id}`);

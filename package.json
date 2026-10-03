@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local command-line RAG prototype for the Real Love Ready AI companion.",
+  "description": "Real Love Ready Compass: an AI guide to discovering and reflecting on RLR content.",
   "scripts": {
     "chat": "tsx src/cli.ts",
     "web": "tsx src/web/server.ts",

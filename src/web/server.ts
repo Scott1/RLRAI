@@ -239,7 +239,7 @@ async function handleChat(request: http.IncomingMessage, response: http.ServerRe
     title: source.metadata.title,
     type: source.metadata.type,
     ...(source.metadata.type === "book" ? { workTitle: BOOK_DISPLAY_NAME } : {}),
-    ...(source.metadata.type === "podcast" && source.metadata.series ? { workTitle: source.metadata.series } : {}),
+    ...(source.metadata.type === "podcast" ? { workTitle: source.metadata.series ?? "Let's Talk Love" } : {}),
     ...(source.metadata.type === "article" ? { workTitle: source.metadata.publication ?? "Real Love Ready article" } : {}),
     sourceUrl: source.metadata.source_url,
     score: source.score

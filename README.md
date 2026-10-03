@@ -213,6 +213,20 @@ Add `--apply` to update the 125 podcast file attributes in place. The command ma
 
 This is a one-time updater for the original 145-file store, not for stores rebuilt with `content_sha256`. New stores already receive the podcast links from the upload manifest.
 
+To refresh podcast display titles from the verified episode-page crosswalk without
+re-uploading transcripts, export the CSV to JSON using PowerShell:
+
+```powershell
+Import-Csv ../rlr-ai-companion-corpus/manifests/podcast_episode_crosswalk/episode_crosswalk.csv | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 crosswalk.json
+npx tsx scripts/updatePodcastTitles.ts crosswalk.json
+npx tsx scripts/updatePodcastTitles.ts crosswalk.json --apply
+```
+
+The first command previews the changes. The updater matches source IDs and episode
+URLs, changes only verified titles, and saves metadata backups under
+`.rlr/podcast-title-updates`. Keep the current corpus upload manifests in sync with
+these titles so future uploads retain them; leave historical audit files unchanged.
+
 ## Sync Individual Sources
 
 Use `sync:content` when an approved transcript or article changes and you want to update an existing vector store without rebuilding all of it. For files uploaded with `content_sha256`, it compares the local file's SHA-256 hash directly with the stored attribute. Older attachments without that attribute fall back to comparing OpenAI's parsed text, which is not a downloadable copy of the original file; review any proposed replacement. The first run is a read-only preview; it does not upload or remove anything. The target store ID is always explicit:

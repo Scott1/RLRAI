@@ -314,7 +314,10 @@ function createSourceGroup(sources, messageId) {
     const url = safeSourceUrl(source.sourceUrl);
     const title = document.createElement(url ? "a" : "div");
     title.className = "source-title";
-    title.textContent = source.title;
+    const displayTitle = source.workTitle?.replace(/\u2019/g, "'").toLowerCase() === "let's talk love"
+      ? source.title.replace(/^let['\u2019]s talk love(?:\s+podcast)?\s*(?:[:\u2013\u2014-]\s*)?/i, "").trim()
+      : source.title;
+    title.textContent = displayTitle || source.title;
     if (url) {
       title.href = url;
       title.target = "_blank";

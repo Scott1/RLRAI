@@ -28,6 +28,8 @@ export interface AppConfig {
   vectorStoreId?: string;
   vectorStoreIds: string[];
   retrievalMaxResults: number;
+  retrievalCandidateResults: number;
+  retrievalMaxPassagesPerDocument: number;
   minRetrievalScore: number;
   evalResultsDir: string;
   uploadManifests: string[];
@@ -41,6 +43,14 @@ function parseNumber(value: string | undefined, fallback: number): number {
 
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function retrievalCount(name: string, fallback: number): number {
+  const value = Number(process.env[name] || fallback);
+  if (!Number.isInteger(value) || value < 1 || value > 50) {
+    throw new Error(`${name} must be an integer between 1 and 50.`);
+  }
+  return value;
 }
 
 export function getConfig(rootDir = process.cwd()): AppConfig {
@@ -64,7 +74,9 @@ export function getConfig(rootDir = process.cwd()): AppConfig {
     model: process.env.OPENAI_MODEL || "gpt-5.2",
     vectorStoreId: vectorStoreIds[0],
     vectorStoreIds,
-    retrievalMaxResults: parseNumber(process.env.RLR_RETRIEVAL_MAX_RESULTS, 6),
+    retrievalMaxResults: retrievalCount("RLR_RETRIEVAL_MAX_RESULTS", 6),
+    retrievalCandidateResults: retrievalCount("RLR_RETRIEVAL_CANDIDATES", 20),
+    retrievalMaxPassagesPerDocument: retrievalCount("RLR_RETRIEVAL_MAX_PER_DOCUMENT", 2),
     minRetrievalScore: parseNumber(process.env.RLR_MIN_RETRIEVAL_SCORE, 0.25),
     evalResultsDir: path.resolve(rootDir, process.env.RLR_EVAL_RESULTS_DIR ?? "evals/results"),
     uploadManifests: parsePathList(process.env.RLR_UPLOAD_MANIFESTS).map((item) => path.resolve(rootDir, item)),

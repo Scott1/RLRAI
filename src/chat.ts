@@ -33,7 +33,10 @@ export async function answerQuestion(options: AnswerOptions): Promise<ChatAnswer
 
   const retrieval = await searchRlrContent(options.client, options.question, {
     vectorStoreIds: options.config.vectorStoreIds,
-    maxResults: options.config.retrievalMaxResults
+    maxResults: options.config.retrievalMaxResults,
+    candidateMaxResults: options.config.retrievalCandidateResults,
+    maxPassagesPerDocument: options.config.retrievalMaxPassagesPerDocument,
+    minScore: options.config.minRetrievalScore
   });
 
   if (!hasAdequateSupport(retrieval, options.config.minRetrievalScore)) {

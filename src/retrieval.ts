@@ -1,10 +1,14 @@
 import type OpenAI from "openai";
-import { BOOK_URL, buildCitations, citationKey, trimExcerpt } from "./citations";
+import { BOOK_URL, buildCitations, citationKey } from "./citations";
 import type { RetrievalResult, SourceCitation, SourceMetadata } from "./types";
 
 interface SearchOptions {
   vectorStoreIds: string[];
   maxResults: number;
+  candidateMaxResults?: number;
+  maxPassagesPerDocument?: number;
+  minScore?: number;
+  onSearchDiagnostics?: (diagnostics: { vectorStoreId: string; searchQuery: unknown; returnedPassages: number }) => void;
 }
 
 interface RawSearchResult {
@@ -20,25 +24,62 @@ export async function searchRlrContent(
   query: string,
   options: SearchOptions
 ): Promise<RetrievalResult[]> {
-  const perStoreMax = Math.max(options.maxResults, 1);
+  const perStoreMax = Math.min(50, Math.max(options.candidateMaxResults ?? options.maxResults, 1));
   const pages = await Promise.all(options.vectorStoreIds.map(async (vectorStoreId) => {
-    const page = await client.vectorStores.search(vectorStoreId, {
+    const request = client.vectorStores.search(vectorStoreId, {
       query,
       max_num_results: perStoreMax,
       rewrite_query: true
     });
+    // The SDK's Page wrapper omits search_query; inspection reads the raw response.
+    const page = options.onSearchDiagnostics
+      ? await (await request.asResponse()).json() as { data?: RawSearchResult[]; search_query?: unknown }
+      : await request;
 
     const data = Array.isArray((page as { data?: unknown }).data)
       ? ((page as { data: RawSearchResult[] }).data)
       : [];
 
+    options.onSearchDiagnostics?.({ vectorStoreId,
+      searchQuery: (page as unknown as { search_query?: unknown }).search_query,
+      returnedPassages: data.length });
+
     return data.map((result, index) => mapSearchResult(result, index, vectorStoreId));
   }));
 
-  return pages
+  const ranked = pages
     .flat()
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    .slice(0, options.maxResults);
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  return options.maxPassagesPerDocument === undefined
+    ? ranked.slice(0, options.maxResults)
+    : selectDiversePassages(ranked, options.maxResults, options.maxPassagesPerDocument, options.minScore ?? 0);
+}
+
+export function selectDiversePassages(
+  results: RetrievalResult[], maxResults: number, maxPerDocument: number, minScore: number
+): RetrievalResult[] {
+  if (!Number.isInteger(maxResults) || maxResults < 1 || !Number.isInteger(maxPerDocument) || maxPerDocument < 1 ||
+      !Number.isFinite(minScore) || minScore < 0 || minScore > 1) {
+    throw new Error("Passage limits must be positive integers and the minimum score must be between 0 and 1.");
+  }
+  const counts = new Map<string, number>();
+  const seen = new Map<string, Set<string>>();
+  const selected: RetrievalResult[] = [];
+  for (const result of [...results].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))) {
+    if (typeof result.score !== "number" || !Number.isFinite(result.score) || result.score < minScore || !result.text.trim()) continue;
+    const document = result.metadata.id !== "unknown-source" && result.metadata.id
+      ? `source:${result.metadata.id}`
+      : `file:${result.fileId || `${result.vectorStoreId ?? ""}:${result.filename || result.id}`}`;
+    const count = counts.get(document) ?? 0;
+    const texts = seen.get(document) ?? new Set<string>();
+    if (count >= maxPerDocument || texts.has(result.text.trim())) continue;
+    selected.push(result);
+    counts.set(document, count + 1);
+    texts.add(result.text.trim());
+    seen.set(document, texts);
+    if (selected.length === maxResults) break;
+  }
+  return selected;
 }
 
 export function hasAdequateSupport(results: RetrievalResult[], minScore: number): boolean {
@@ -74,7 +115,7 @@ export function buildRetrievalContext(results: RetrievalResult[]): { context: st
       `Source URL: ${metadata.source_url ?? "n/a"}`,
       `Score: ${score}`,
       "Passage:",
-      trimExcerpt(result.text)
+      result.text.trim()
     ].join("\n");
   });
 

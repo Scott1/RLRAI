@@ -273,7 +273,27 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) before sharing the app outside your own machi
 
 ```bash
 npm run retrieval -- "setting boundaries without guilt"
+npm run retrieval -- "forgiveness" --limit 50
+npm run retrieval -- "how do I practice forgiveness" --chat
 ```
+
+Inspection defaults to 20 passages and accepts `--limit` from 1 to 50. It shows
+the original query, OpenAI's returned search query and passage counts per store.
+Results are passages, not necessarily distinct documents. This does not change
+the chat's `RLR_RETRIEVAL_MAX_RESULTS` setting (six by default). Add `--chat` to
+show the candidate ranking with selected/omitted markers and the passages chat
+would use. `--limit` then overrides the candidate count for that inspection run.
+
+Chat searches for up to 20 candidate passages per vector store
+(`RLR_RETRIEVAL_CANDIDATES`), merges their scores and selects up to six passages
+with at most two per source document (`RLR_RETRIEVAL_MAX_PER_DOCUMENT`). Each
+selected passage must have a score at or above `RLR_MIN_RETRIEVAL_SCORE` (0.25 by
+default) and contain text. Exact duplicate passages from the same source are
+removed. Book chapters count as individual source documents. Selection does not
+prefer any source type; the model cites only material it actually uses. If few
+sources qualify, chat receives fewer passages rather than relaxing these rules.
+The model receives the complete selected passages, including speaker turns and
+qualifications; only the inspection command's printed excerpts are shortened.
 
 This prints retrieved source titles, scores, and excerpts so retrieval failures can be separated from generation failures.
 

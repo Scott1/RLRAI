@@ -54,6 +54,11 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/assets/rlr-heart.ico") {
+      await serveStatic(url.pathname, response);
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/login") {
       sendHtml(response, 200, loginPage());
       return;
@@ -364,6 +369,9 @@ async function serveStatic(urlPath: string, response: http.ServerResponse): Prom
 
 function contentType(filePath: string): string {
   const extension = path.extname(filePath).toLowerCase();
+  if (extension === ".ico") {
+    return "image/x-icon";
+  }
   if (extension === ".css") {
     return "text/css; charset=utf-8";
   }
@@ -440,13 +448,13 @@ function loginPage(message?: string): string {
     return page("Preview access is not enabled", "This local Compass does not require a sign-in.", "Open Compass", "/");
   }
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in | Real Love Ready Compass</title><style>${authStyles()}</style></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in | Real Love Ready Compass</title><link rel="icon" href="/assets/rlr-heart.ico" type="image/x-icon"><style>${authStyles()}</style></head>
 <body><main><p class="eyebrow">Real Love Ready</p><h1>Compass preview</h1><p class="intro">Sign in with the reviewer account you were given.</p>${message ? `<p class="form-message" role="alert">${message}</p>` : ""}<form method="post" action="/auth/login"><label for="username">Username</label><input id="username" name="username" autocomplete="username" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button type="submit">Sign in</button></form><p class="fine-print">This preview is for invited reviewers only.</p></main></body></html>`;
 }
 
 function page(title: string, body: string, action: string, href: string): string {
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title} | Real Love Ready Compass</title><style>${authStyles()}</style></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title} | Real Love Ready Compass</title><link rel="icon" href="/assets/rlr-heart.ico" type="image/x-icon"><style>${authStyles()}</style></head>
 <body><main><p class="eyebrow">Real Love Ready</p><h1>${title}</h1><p class="intro">${body}</p><a class="button" href="${href}">${action}</a></main></body></html>`;
 }
 

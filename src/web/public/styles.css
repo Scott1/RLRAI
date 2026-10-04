@@ -126,9 +126,9 @@ p { margin: 0; }
 .sources { margin-top: 18px; border-top: 1px solid var(--line); }
 .sources summary { padding: 14px 0 2px; color: var(--navy); cursor: pointer; font-size: 13px; font-weight: 800; }
 .source-list { padding: 10px 0 2px; }
-.source { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: start; gap: 10px; padding: 11px 3px; border-top: 1px solid var(--line); scroll-margin: 12px; }
+.source { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: start; gap: 10px; padding: 12px; border-top: 1px solid var(--line); border-radius: 4px; outline: none; scroll-margin: 12px; transition: background-color 180ms ease; }
 .source:target, .source.source-highlight { background: var(--rose-soft); }
-.source:focus { outline: 2px solid var(--rose); outline-offset: -2px; }
+.source:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
 .source-number { color: var(--rose-dark); font-size: 13px; font-weight: 800; }
 .source-details { min-width: 0; }
 .source-work { color: var(--muted); font-size: 12px; line-height: 1.4; margin-bottom: 3px; }

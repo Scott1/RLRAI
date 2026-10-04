@@ -4,13 +4,12 @@ const messages = document.querySelector("#messages");
 const statusEl = document.querySelector("#status");
 const sendButton = document.querySelector("#sendButton");
 const resetButton = document.querySelector("#resetButton");
-const connectionStatus = document.querySelector("#connectionStatus");
-const connectionText = document.querySelector("#connectionText");
-const modelDetail = document.querySelector("#modelDetail");
 const logoutForm = document.querySelector("#logoutForm");
 const mainMenu = document.querySelector("#mainMenu");
 const menuButton = document.querySelector("#menuButton");
 const menuPanel = document.querySelector("#menuPanel");
+const aboutButton = document.querySelector("#aboutButton");
+const aboutDialog = document.querySelector("#aboutDialog");
 const shareIdeaButton = document.querySelector("#shareIdeaButton");
 const adminDashboardLink = document.querySelector("#adminDashboardLink");
 const feedbackDialog = document.querySelector("#feedbackDialog");
@@ -72,6 +71,11 @@ resetButton.addEventListener("click", async () => {
 });
 
 menuButton.addEventListener("click", () => setMenuOpen(menuPanel.hidden));
+aboutButton.addEventListener("click", () => {
+  setMenuOpen(false);
+  aboutDialog.showModal();
+});
+aboutDialog.addEventListener("close", () => menuButton.focus());
 document.addEventListener("pointerdown", (event) => {
   if (!mainMenu.contains(event.target)) {
     setMenuOpen(false);
@@ -533,19 +537,12 @@ async function loadStatus() {
       throw new Error("Unable to reach the RLR library.");
     }
     const status = await response.json();
-    const stores = status.vectorStoreIds?.length || 0;
     logoutForm.hidden = status.authMode !== "password";
     feedbackEnabled = status.feedbackEnabled === true;
     shareIdeaButton.hidden = !feedbackEnabled;
     adminDashboardLink.hidden = status.admin !== true;
-    mainMenu.hidden = !feedbackEnabled && logoutForm.hidden && adminDashboardLink.hidden;
     document.querySelectorAll(".report-button").forEach((button) => { button.hidden = !feedbackEnabled; });
-    connectionStatus.classList.add("connected");
-    connectionText.textContent = "RLR library connected";
-    modelDetail.textContent = `${stores} library ${stores === 1 ? "collection" : "collections"} connected`;
   } catch {
-    connectionStatus.classList.add("offline");
-    connectionText.textContent = "Library connection unavailable";
-    modelDetail.textContent = "Check that the local Compass server is running";
+    statusEl.textContent = "Unable to connect. Please refresh to try again.";
   }
 }

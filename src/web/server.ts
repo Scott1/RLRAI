@@ -16,6 +16,7 @@ import { BOOK_DISPLAY_NAME, citedSources } from "../citations";
 import { getConfig } from "../config";
 import { createOpenAIClient } from "../openai";
 import type { ChatMessage } from "../types";
+import { renderLoginPage } from "./login";
 import { appendFeedback, buildEvalCases, listFeedback, parseFeedbackSubmission, parseReviewSubmission, resolveFeedbackFile, saveFeedbackReview } from "./feedback";
 
 interface ChatRequest {
@@ -54,7 +55,7 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    if (request.method === "GET" && url.pathname === "/assets/rlr-heart.ico") {
+    if (request.method === "GET" && ["/assets/rlr-heart.ico", "/assets/real-love-ready-logo.webp", "/assets/compass-login.png", "/login.css"].includes(url.pathname)) {
       await serveStatic(url.pathname, response);
       return;
     }
@@ -372,6 +373,12 @@ function contentType(filePath: string): string {
   if (extension === ".ico") {
     return "image/x-icon";
   }
+  if (extension === ".png") {
+    return "image/png";
+  }
+  if (extension === ".webp") {
+    return "image/webp";
+  }
   if (extension === ".css") {
     return "text/css; charset=utf-8";
   }
@@ -444,12 +451,7 @@ function sendJson(response: http.ServerResponse, status: number, body: unknown, 
 }
 
 function loginPage(message?: string): string {
-  if (authConfig.mode === "off") {
-    return page("Preview access is not enabled", "This local Compass does not require a sign-in.", "Open Compass", "/");
-  }
-  return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in | Real Love Ready Compass</title><link rel="icon" href="/assets/rlr-heart.ico" type="image/x-icon"><style>${authStyles()}</style></head>
-<body><main><p class="eyebrow">Real Love Ready</p><h1>Compass preview</h1><p class="intro">Sign in with the reviewer account you were given.</p>${message ? `<p class="form-message" role="alert">${message}</p>` : ""}<form method="post" action="/auth/login"><label for="username">Username</label><input id="username" name="username" autocomplete="username" required><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button type="submit">Sign in</button></form><p class="fine-print">This preview is for invited reviewers only.</p></main></body></html>`;
+  return renderLoginPage({ message, requiresSignIn: authConfig.mode !== "off" });
 }
 
 function page(title: string, body: string, action: string, href: string): string {
